@@ -1,6 +1,9 @@
 import bpy
-from bpy.types import Operator, Context, Scene, ViewLayer, CompositorNodeRLayers
+from bpy.types import Operator, Context, Scene, ViewLayer, CompositorNodeRLayers, Collection, CollectionProperty, LayerCollection
 from bpy.props import BoolProperty
+import json
+import re
+from . import props
 
 
 def get_render_node_scene_layer(node: CompositorNodeRLayers):
@@ -125,10 +128,10 @@ class UFRP_OP_OnlySelected(Operator):
         return {"FINISHED"}
 
 
-class UFRP_OP_SwitchViewLayer(Operator):
+class UFRP_OP_RenderLayerSwitch(Operator):
     """Switch to active render layer node's view layer"""
-    bl_idname = "ufrp.switch_view_layer"
-    bl_label = "Switch to active View Layer"
+    bl_idname = "ufrp.switch_render_layer"
+    bl_label = "Switch to active Render Layer Node"
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
@@ -151,4 +154,160 @@ class UFRP_OP_SwitchViewLayer(Operator):
         context.window.scene = scene
         context.window.view_layer = layer
         self.report({"INFO"}, f"Switched to '{layer.name}' view layer")
+        return {"FINISHED"}
+
+
+############## LAYER MANAGER ##############
+
+class UFRP_OP_ViewLayerAdd(Operator):
+    """Add a new View Layer from selected"""
+    bl_idname = "ufrp.view_layer_add"
+    bl_label = "Add a new View Layer"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        layer_index = props.get_layer_index()
+        #TODO check si index correct, peut-etre interdir en dehors du nombre de view layer dans la proprietee directement
+        selected_layer = context.scene.view_layers[layer_index]
+        context.scene.view_layers.new(selected_layer.name)
+        props.set_layer_index(layer_index + 1)
+        return {"FINISHED"}
+
+
+class UFRP_OP_ViewLayerRemove(Operator):
+    """Remove selected View Layer"""
+    bl_idname = "ufrp.view_layer_remove"
+    bl_label = "Remove the View Layer"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context: Context):
+        cls.poll_message_set("Cannot remove last View Layer")
+        return len(context.scene.view_layers) > 1
+
+    def execute(self, context):
+        layer_index = props.get_layer_index()
+        selected_layer = context.scene.view_layers[layer_index]
+        context.scene.view_layers.remove(selected_layer)
+        props.set_layer_index(layer_index - 1)
+        return {"FINISHED"}
+
+
+class UFRP_OP_ViewLayerSwitch(Operator):
+    """Switch to manager selected View Layer"""
+    bl_idname = "ufrp.switch_view_layer"
+    bl_label = "Switch to selected View Layer"
+    bl_options = {"REGISTER", "UNDO"}
+    layer_name: bpy.props.StringProperty("View Layer name") # type: ignore
+
+    def execute(self, context):
+        selected_layer = context.scene.view_layers.get(self.layer_name)
+        context.window.view_layer = selected_layer
+        switched_index = context.scene.view_layers.keys().index(self.layer_name)
+        props.set_layer_index(switched_index)
+        return {"FINISHED"}
+
+
+def recursive_layer_collection_search(collection: Collection, layer_collections: CollectionProperty):
+    pass #TODO recursivly store/copy view layer settings
+
+    # for lc in layer_collections:
+    #     lc: LayerCollection
+    #     if lc.collection == collection:
+    #         return lc
+    # for lc in layer_collections:
+    #     found = recursive_layer_collection_search(collection, lc.children)
+    #     if found:
+    #         return lc
+    # return None
+
+
+class UFRP_OP_CopyLayerSettings(Operator):
+    """Copy selected View Layer's settings"""
+    bl_idname = "ufrp.copy_layer_settings"
+    bl_label = "Copy settings"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        layer_index = props.get_layer_index()
+        selected_layer = context.scene.view_layers[layer_index]
+        context.scene.view_layer_source = selected_layer.name
+        return {"FINISHED"}
+
+
+class UFRP_OP_PasteLayerSettings(Operator):
+    """Paste copied source settings to selected View Layer"""
+    bl_idname = "ufrp.paste_layer_settings"
+    bl_label = "Paste settings"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        source_layer = context.scene.view_layer_source
+        layer_index = props.get_layer_index()
+        selected_layer = context.scene.view_layers[layer_index]
+        recursive_layer_collection_search() #TODO:
+        return {"FINISHED"}
+
+
+class UFRP_OP_MoveLayer(Operator):
+    """Move selected View layer up or down"""
+    bl_idname = "ufrp.move_layer"
+    bl_label = "Move up/down"
+    bl_options = {"REGISTER", "UNDO"}
+    direction: bpy.props.StringProperty() #type: ignore
+
+    @classmethod
+    def poll(cls, context: Context):
+        cls.poll_message_set("Must have at least two view layers")
+        return len(context.scene.view_layers) > 1
+
+    def execute(self, context: Context):
+        layer_index = props.get_layer_index()
+        if self.direction == "UP":
+            index_to = layer_index - 1
+            if index_to < 0:
+                index_to = len(context.scene.view_layers) - 1
+        elif self.direction == "DOWN":
+            index_to = layer_index + 1
+            if index_to > len(context.scene.view_layers) - 1:
+                index_to = 0
+        elif self.direction == "TOP":
+            index_to = 0
+        elif self.direction == "BOTTOM":
+            index_to = len(context.scene.view_layers) - 1
+        else:
+            self.report({"ERROR"}, f"Operator property 'direction' should be in 'UP', 'DOWN', 'TOP' or 'BOTTOM', got '{self.direction}'")
+            return {"CANCELLED"}
+        context.scene.view_layers.move(layer_index, index_to)
+        props.set_layer_index(index_to)
+
+        return {"FINISHED"}
+
+
+class UFRP_OP_SortLayers(Operator):
+    """Sort View layers by name"""
+    bl_idname = "ufrp.sort_layers"
+    bl_label = "Sort layers"
+    bl_options = {"REGISTER", "UNDO"}
+    is_reverse: bpy.props.BoolProperty(default=False) #type: ignore
+
+    @classmethod
+    def poll(cls, context: Context):
+        cls.poll_message_set("Must have at least two view layers")
+        return len(context.scene.view_layers) > 1
+    
+    @staticmethod
+    def natural_sort_key(s, _nsre=re.compile('([0-9]+)')):
+        """Sort a string in a natural way
+        https://stackoverflow.com/a/16090640"""
+        return [int(text) if text.isdigit() else text.lower() for text in _nsre.split(s)]
+
+    def execute(self, context: Context):
+        layers = context.scene.view_layers
+        sorted_layers = sorted(layers, key=lambda vl: self.natural_sort_key(vl.name))
+        if self.is_reverse:
+            sorted_layers.reverse()
+        for to_i, l in enumerate(sorted_layers):
+            current_i = [l.name for l in context.scene.view_layers].index(l.name)
+            context.scene.view_layers.move(current_i, to_i)
         return {"FINISHED"}
