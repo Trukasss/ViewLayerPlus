@@ -194,9 +194,9 @@ class UFRP_OP_ViewLayerRemove(Operator):
 
 
 class UFRP_OP_ViewLayerSwitch(Operator):
-    """Switch to manager selected View Layer"""
+    """Switch to manager's View Layer"""
     bl_idname = "ufrp.switch_view_layer"
-    bl_label = "Switch to selected View Layer"
+    bl_label = "Switch to View Layer"
     bl_options = {"REGISTER", "UNDO"}
     layer_name: bpy.props.StringProperty("View Layer name") # type: ignore
 

@@ -39,20 +39,23 @@ def register():
     bpy.utils.register_class(op.UFRP_OP_ViewLayerSwitch)
     bpy.utils.register_class(op.UFRP_OP_MoveLayer)
     bpy.utils.register_class(op.UFRP_OP_SortLayers)
+    bpy.utils.register_class(ui.UFRP_PT_manager_filter)
     bpy.utils.register_class(ui.UFRP_MT_menu)
     bpy.utils.register_class(ui.UFRP_UL_layers)
     bpy.utils.register_class(ui.UFRP_MT_manager_context_menu)
     bpy.utils.register_class(ui.UFRP_PT_layer_manager)
-    bpy.types.VIEWLAYER_PT_layer.append(ui.draw_batch_operators)
     bpy.types.NODE_MT_editor_menus.append(ui.draw_comp_menu)
     bpy.types.NODE_MT_context_menu.append(ui.draw_node_menu)
 
 
 def unregister():
+    bpy.types.NODE_MT_editor_menus.remove(ui.draw_comp_menu)
+    bpy.types.NODE_MT_context_menu.remove(ui.draw_node_menu)
     bpy.utils.unregister_class(ui.UFRP_PT_layer_manager)
     bpy.utils.unregister_class(ui.UFRP_MT_manager_context_menu)
     bpy.utils.unregister_class(ui.UFRP_UL_layers)
     bpy.utils.unregister_class(ui.UFRP_MT_menu)
+    bpy.utils.unregister_class(ui.UFRP_PT_manager_filter)
     bpy.utils.unregister_class(op.UFRP_OP_SortLayers)
     bpy.utils.unregister_class(op.UFRP_OP_MoveLayer)
     bpy.utils.unregister_class(op.UFRP_OP_ViewLayerSwitch)
@@ -62,10 +65,6 @@ def unregister():
     bpy.utils.unregister_class(op.UFRP_OP_OnlySelected)
     bpy.utils.unregister_class(op.UFRP_OP_OnlyUnmuted)
     bpy.utils.unregister_class(op.UFRP_OP_batch)
-    bpy.types.VIEWLAYER_PT_layer.remove(ui.draw_batch_operators)
-    bpy.types.NODE_MT_editor_menus.remove(ui.draw_comp_menu)
-    bpy.types.NODE_MT_context_menu.remove(ui.draw_node_menu)
-    del bpy.types.Scene.ufrp
     bpy.utils.unregister_class(props.UFRP_properties)
-
+    del bpy.types.Scene.ufrp
     icons.unregister()

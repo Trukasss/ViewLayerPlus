@@ -1,6 +1,7 @@
 import bpy
-from bpy.types import Context, Panel, Menu
+from bpy.types import Context, Panel, Menu, UIList
 from bl_ui.space_node import NODE_MT_context_menu
+from . import props
 
 from .op import (
     UFRP_OP_batch, 
@@ -16,15 +17,35 @@ from .op import (
 from . import icons
 
 
-class UFRP_UL_layers(bpy.types.UIList):
+class UFRP_PT_manager_filter(Panel):
+    """Show View Layer manager list options"""
+    bl_label = "ViewLayerPlus Manager filter"
+    bl_idname = "UFRP_PT_manager_filter"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "view_layer"
+    bl_options = {'INSTANCED'}
+
+    def draw(self, context: Context):
+        lay = self.layout
+        lay.label(text="Filter manager options")
+        row = lay.row(align=True)
+        row.prop(context.scene.ufrp, "show_use", text="", icon="CHECKBOX_HLT", toggle=True)
+        row.prop(context.scene.ufrp, "show_switch", text="", icon_value=icons.get_switch_id(), toggle=True)
+
+
+class UFRP_UL_layers(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
         scene = data
         current_view_layer = item
         row = layout.row()
         row.prop(item, "name", text="", emboss=False, icon_value=icon)
-        row.prop(item, "use", text="")
-        op_switch = row.operator(UFRP_OP_ViewLayerSwitch.bl_idname, icon_value=icons.get_switch_id(), text="")
-        op_switch.layer_name = current_view_layer.name
+        row = row.row(align=True)
+        if props.is_show_use():
+            row.prop(item, "use", text="")#, toggle=True)
+        if props.is_show_switch():
+            op_switch = row.operator(UFRP_OP_ViewLayerSwitch.bl_idname, text="", icon_value=icons.get_switch_id())
+            op_switch.layer_name = current_view_layer.name
 
 
 class UFRP_MT_manager_context_menu(Menu):
@@ -36,9 +57,12 @@ class UFRP_MT_manager_context_menu(Menu):
         lay.separator()
         lay.operator(UFRP_OP_SortLayers.bl_idname, icon='SORTALPHA', text="Sort by Name",).is_reverse = False
         lay.operator(UFRP_OP_SortLayers.bl_idname, icon="ARROW_LEFTRIGHT", text="Sort reverse").is_reverse = True
+        lay.separator()
+        lay.operator(UFRP_OP_batch.bl_idname, text="Enable all", icon_value = icons.get_checked_id()).state = True
+        lay.operator(UFRP_OP_batch.bl_idname, text="Disable all", icon_value = icons.get_unchecked_id()).state = False
 
 
-class UFRP_PT_layer_manager(bpy.types.Panel):
+class UFRP_PT_layer_manager(Panel):
     """Creates a Panel in the Object properties window"""
     bl_label = "ViewLayerPlus Manager"
     bl_idname = "UFRP_PT_layer_manager"
@@ -47,21 +71,25 @@ class UFRP_PT_layer_manager(bpy.types.Panel):
     bl_context = "view_layer"
 
     def draw(self, context):
-        layout = self.layout
-        row = layout.row()
+        lay = self.layout
+        row = lay.row()
         row.template_list("UFRP_UL_layers", "", context.scene, "view_layers", context.scene.ufrp, "index")
         col = row.column(align=True)
         col.operator(UFRP_OP_ViewLayerAdd.bl_idname, icon='ADD', text="")
         col.operator(UFRP_OP_ViewLayerRemove.bl_idname, icon='REMOVE', text="")
         col.separator()
+        col.popover(
+            panel="UFRP_PT_manager_filter",
+            text="",
+            icon="FILTER",
+        )
         col.menu("UFRP_MT_manager_context_menu", icon='DOWNARROW_HLT', text="")
         col.separator()
-        sub = col.column(align=True)
-        sub.operator(UFRP_OP_MoveLayer.bl_idname, icon='TRIA_UP', text="").direction = "UP"
-        sub.operator(UFRP_OP_MoveLayer.bl_idname, icon='TRIA_DOWN', text="").direction = "DOWN"
+        col.operator(UFRP_OP_MoveLayer.bl_idname, icon='TRIA_UP', text="").direction = "UP"
+        col.operator(UFRP_OP_MoveLayer.bl_idname, icon='TRIA_DOWN', text="").direction = "DOWN"
 
 
-class UFRP_MT_menu(bpy.types.Menu):
+class UFRP_MT_menu(Menu):
     bl_label = "View Layers"
     bl_idname = "UFRP_MT_menu"
 
@@ -86,20 +114,6 @@ class UFRP_MT_menu(bpy.types.Menu):
         layout.operator(
             UFRP_OP_RenderLayerSwitch.bl_idname,
             icon_value = icons.get_switch_id())
-
-
-def draw_batch_operators(self: Panel, context: Context):
-    layout = self.layout
-    op_on = layout.operator(
-        UFRP_OP_batch.bl_idname, 
-        text="Enable all", 
-        icon_value = icons.get_checked_id())
-    op_on.state = True
-    op_off = layout.operator(
-        UFRP_OP_batch.bl_idname, 
-        text="Disable all", 
-        icon_value = icons.get_unchecked_id())
-    op_off.state = False
 
 
 def draw_comp_menu(self: Panel, context: Context):
