@@ -8,6 +8,8 @@ from .op import (
     UFRP_OP_OnlyUnmuted,
     UFRP_OP_OnlySelected,
     UFRP_OP_RenderLayerSwitch,
+    UFRP_OP_CopyLayerSettings,
+    UFRP_OP_PasteLayerSettings,
     UFRP_OP_ViewLayerAdd,
     UFRP_OP_ViewLayerRemove,
     UFRP_OP_ViewLayerSwitch,
@@ -73,20 +75,31 @@ class UFRP_PT_layer_manager(Panel):
     def draw(self, context):
         lay = self.layout
         row = lay.row()
-        row.template_list("UFRP_UL_layers", "", context.scene, "view_layers", context.scene.ufrp, "index")
-        col = row.column(align=True)
-        col.operator(UFRP_OP_ViewLayerAdd.bl_idname, icon='ADD', text="")
-        col.operator(UFRP_OP_ViewLayerRemove.bl_idname, icon='REMOVE', text="")
-        col.separator()
-        col.popover(
+        col1 = row.column()
+        col2 = row.column(align=True)
+        # col1 (main)
+        col1.template_list("UFRP_UL_layers", "", context.scene, "view_layers", context.scene.ufrp, "index")
+        row = col1.row(align=True)
+        row.prop(context.scene.ufrp, "is_copy_exclude", text="", icon="CHECKBOX_HLT", toggle=True)
+        row.prop(context.scene.ufrp, "is_copy_holdout", text="", icon="HOLDOUT_ON", toggle=True)
+        row.prop(context.scene.ufrp, "is_copy_indirect_only", text="", icon="INDIRECT_ONLY_ON", toggle=True)
+        row.prop(context.scene.ufrp, "is_copy_hide_viewport", text="", icon="RESTRICT_VIEW_OFF", toggle=True)
+        row.separator()
+        row.operator(UFRP_OP_CopyLayerSettings.bl_idname, text="", icon="COPYDOWN")
+        row.operator(UFRP_OP_PasteLayerSettings.bl_idname, text="", icon="PASTEDOWN")
+        # col2 (sidebar)
+        col2.operator(UFRP_OP_ViewLayerAdd.bl_idname, icon='ADD', text="")
+        col2.operator(UFRP_OP_ViewLayerRemove.bl_idname, icon='REMOVE', text="")
+        col2.separator()
+        col2.popover(
             panel="UFRP_PT_manager_filter",
             text="",
             icon="FILTER",
         )
-        col.menu("UFRP_MT_manager_context_menu", icon='DOWNARROW_HLT', text="")
-        col.separator()
-        col.operator(UFRP_OP_MoveLayer.bl_idname, icon='TRIA_UP', text="").direction = "UP"
-        col.operator(UFRP_OP_MoveLayer.bl_idname, icon='TRIA_DOWN', text="").direction = "DOWN"
+        col2.menu("UFRP_MT_manager_context_menu", icon='DOWNARROW_HLT', text="")
+        col2.separator()
+        col2.operator(UFRP_OP_MoveLayer.bl_idname, icon='TRIA_UP', text="").direction = "UP"
+        col2.operator(UFRP_OP_MoveLayer.bl_idname, icon='TRIA_DOWN', text="").direction = "DOWN"
 
 
 class UFRP_MT_menu(Menu):

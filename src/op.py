@@ -208,22 +208,8 @@ class UFRP_OP_ViewLayerSwitch(Operator):
         return {"FINISHED"}
 
 
-def recursive_layer_collection_search(collection: Collection, layer_collections: CollectionProperty):
-    pass #TODO recursivly store/copy view layer settings
-
-    # for lc in layer_collections:
-    #     lc: LayerCollection
-    #     if lc.collection == collection:
-    #         return lc
-    # for lc in layer_collections:
-    #     found = recursive_layer_collection_search(collection, lc.children)
-    #     if found:
-    #         return lc
-    # return None
-
-
 class UFRP_OP_CopyLayerSettings(Operator):
-    """Copy selected View Layer's settings"""
+    """Set selected View Layer's as copy source"""
     bl_idname = "ufrp.copy_layer_settings"
     bl_label = "Copy settings"
     bl_options = {"REGISTER", "UNDO"}
@@ -231,21 +217,52 @@ class UFRP_OP_CopyLayerSettings(Operator):
     def execute(self, context):
         layer_index = props.get_layer_index()
         selected_layer = context.scene.view_layers[layer_index]
-        context.scene.view_layer_source = selected_layer.name
+        props.set_layer_source(selected_layer.name)
+        self.report({"INFO"}, f"Set '{selected_layer.name}' as copy source")
         return {"FINISHED"}
 
 
 class UFRP_OP_PasteLayerSettings(Operator):
-    """Paste copied source settings to selected View Layer"""
+    """Paste View Layer's Layer Collections settings from source"""
     bl_idname = "ufrp.paste_layer_settings"
     bl_label = "Paste settings"
     bl_options = {"REGISTER", "UNDO"}
 
+    @staticmethod
+    def copy_layercollection_settings(source_lc: LayerCollection, target_lc: LayerCollection):
+        """Recursively copy ViewLayer's Layer Collections settings"""
+        s = source_lc
+        t = target_lc
+        if props.is_copy_exclude():
+            t.exclude = s.exclude
+        if props.is_copy_holdout():
+            t.holdout = s.holdout
+        if props.is_copy_indirect_only():
+            t.indirect_only = s.indirect_only
+        if props.is_copy_hide_viewport():
+            t.hide_viewport = s.hide_viewport
+        for src_child, dst_child in zip(s.children, t.children):
+            __class__.copy_layercollection_settings(src_child, dst_child)
+
     def execute(self, context):
-        source_layer = context.scene.view_layer_source
+        if (not props.is_copy_exclude() 
+            and not props.is_copy_holdout() 
+            and not props.is_copy_indirect_only() 
+            and not props.is_copy_hide_viewport()):
+            self.report({"WARNING"}, f"No settings to Copy/Paste, please check at least one setting")
+            return {"CANCELLED"}
+        source_vl_name = props.get_layer_source()
+        if not source_vl_name:
+            self.report({"WARNING"}, f"Please first copy ViewLayer")
+            return {"CANCELLED"}
+        source_vl = context.scene.view_layers.get(source_vl_name, None)
+        if not source_vl:
+            self.report({"WARNING"}, f"Source '{source_vl_name}' View Layer is missing, please copy first")
+            return {"CANCELLED"}
         layer_index = props.get_layer_index()
-        selected_layer = context.scene.view_layers[layer_index]
-        recursive_layer_collection_search() #TODO:
+        target_vl = context.scene.view_layers[layer_index]
+        self.copy_layercollection_settings(source_vl.layer_collection, target_vl.layer_collection)
+        self.report({"INFO"}, f"Pasted settings from '{source_vl.name}' to '{target_vl.name}'")
         return {"FINISHED"}
 
 
