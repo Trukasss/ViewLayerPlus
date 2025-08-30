@@ -207,7 +207,18 @@ class UFRP_OP_ViewLayerSwitch(Operator):
         return {"FINISHED"}
 
 
-class UFRP_OP_CopyLayerSettings(Operator):
+class UFRP_OP_ReloadCopyProps(Operator):
+    """Reload View Layers copiable properties"""
+    bl_idname = "ufrp.reload_copy_props"
+    bl_label = "Reload properties to copy"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context: Context):
+        props.populate_copy_props(context)
+        return {"FINISHED"}
+
+
+class UFRP_OP_CopyLayer(Operator):
     """Set selected View Layer's as copy source"""
     bl_idname = "ufrp.copy_layer_settings"
     bl_label = "Copy settings"
@@ -221,7 +232,7 @@ class UFRP_OP_CopyLayerSettings(Operator):
         return {"FINISHED"}
 
 
-class UFRP_OP_PasteLayerSettings(Operator):
+class UFRP_OP_PasteLayer(Operator):
     """Paste View Layer's Layer Collections settings from source"""
     bl_idname = "ufrp.paste_layer_settings"
     bl_label = "Paste settings"
@@ -244,42 +255,35 @@ class UFRP_OP_PasteLayerSettings(Operator):
             __class__.copy_layercollection_settings(src_child, dst_child)
 
     @staticmethod
-    def copy_attrs(object_source, object_target, passes_only=True):
+    def copy_attrs(object_source, object_target, exclude=[]):
         """Recursively copy blender's attributes"""
-        for attr_name in dir(object_source):
-            if passes_only and not attr_name.startswith("use_"):
+        assert type(object_source) == type(object_target)
+        if object_source == object_target:
+            return
+        for rna_prop in object_source.bl_rna.properties:
+            prop_name = rna_prop.identifier
+            if prop_name in exclude:
                 continue
-            # ingore unsettable attrs
-            if isinstance(object_source, ViewLayer) and attr_name == "name":
-                continue # don't change View Layer's names
-            if attr_name.startswith("_"):
+            value_src = getattr(object_source, prop_name)
+            value_trg = getattr(object_target, prop_name)
+            # Collection props (ex: aovs)
+            if isinstance(rna_prop, bpy.types.CollectionProperty):
+                if not getattr(value_trg, "add", False) or not getattr(value_trg, "remove", False):
+                    continue # cannot edit collection properties props
+                for coll_prop in value_trg:
+                    value_trg.remove(coll_prop)
+                for coll_prop in value_src:
+                    new_prop = value_trg.add()
+                    __class__.copy_attrs(coll_prop, new_prop, exclude)
                 continue
-            attr_src = getattr(object_source, attr_name)
-            if callable(attr_src):
+            if rna_prop.is_readonly:
                 continue
-            # collection props
-            if isinstance(attr_src, bpy_prop_collection):
-                if not getattr(attr_src, "add", False):
-                    continue
-                if not getattr(attr_src, "remove", False):
-                    continue
-                attr_trg = getattr(object_target, attr_name)
-                for prop_trg in attr_trg:
-                    attr_trg.remove(prop_trg)
-                for prop in attr_src:
-                    new_prop = attr_trg.add()
-                    __class__.copy_attrs(prop, new_prop, passes_only)
-                continue
-            # simple props/variables
-            try:
-                setattr(object_target, attr_name, attr_src)
-            except AttributeError as e:
-                if "read-only" in str(e):
-                    continue
-                print(f"Could not set attr '{attr_name}': {e}")
-
+            # Simple prop
+            setattr(object_target, prop_name, value_src)
+            #TODO does not work for eevee ? no error messages
 
     def execute(self, context: Context):
+        # checks
         if (not props.is_copy_exclude() 
             and not props.is_copy_holdout() 
             and not props.is_copy_indirect_only() 
@@ -297,10 +301,18 @@ class UFRP_OP_PasteLayerSettings(Operator):
             return {"CANCELLED"}
         layer_index = props.get_layer_index()
         target_vl = context.scene.view_layers[layer_index]
+        if source_vl == target_vl:
+            self.report({"WARNING"}, f"Target View Layer '{target_vl.name}' is already the source")
+            return {"CANCELLED"}
+        # copy/paste
         self.copy_layercollection_settings(source_vl.layer_collection, target_vl.layer_collection)
         if props.is_copy_passes():
-            print("=======================") #TODO DEBUG
-            self.copy_attrs(source_vl, target_vl, True)
+            props_exclude = [p.name for p in props.get_copy_props() if not p.is_copy]
+            self.copy_attrs(source_vl, target_vl, props_exclude)
+            if not "cycles" in props_exclude:
+                self.copy_attrs(source_vl.cycles, target_vl.cycles)
+            if not "cycles" in props_exclude:
+                self.copy_attrs(source_vl.eevee, target_vl.eevee)
         self.report({"INFO"}, f"Pasted settings from '{source_vl.name}' to '{target_vl.name}'")
         return {"FINISHED"}
 
@@ -359,6 +371,7 @@ class UFRP_OP_SortLayers(Operator):
         return [int(text) if text.isdigit() else text.lower() for text in _nsre.split(s)]
 
     def execute(self, context: Context):
+        #TODO update index to keep selected view layer
         layers = context.scene.view_layers
         sorted_layers = sorted(layers, key=lambda vl: self.natural_sort_key(vl.name))
         if self.is_reverse:

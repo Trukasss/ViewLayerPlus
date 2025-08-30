@@ -8,8 +8,9 @@ from .op import (
     UFRP_OP_OnlyUnmuted,
     UFRP_OP_OnlySelected,
     UFRP_OP_RenderLayerSwitch,
-    UFRP_OP_CopyLayerSettings,
-    UFRP_OP_PasteLayerSettings,
+    UFRP_OP_ReloadCopyProps,
+    UFRP_OP_CopyLayer,
+    UFRP_OP_PasteLayer,
     UFRP_OP_ViewLayerAdd,
     UFRP_OP_ViewLayerRemove,
     UFRP_OP_ViewLayerSwitch,
@@ -36,7 +37,7 @@ class UFRP_PT_layer_filter(Panel):
         row.prop(context.scene.ufrp, "show_switch", text="", icon_value=icons.get_switch_id(), toggle=True)
 
 
-class UFRP_PT_settings_filter(Panel):
+class UFRP_PT_properties_filter(Panel):
     """Choose which View Layer's properties to copy"""
     bl_label = "ViewLayerPlus copy properties filter"
     bl_idname = "UFRP_PT_settings_filter"
@@ -46,8 +47,12 @@ class UFRP_PT_settings_filter(Panel):
     bl_options = {"INSTANCED"}
 
     def draw(self, context: Context):
-        props.
-
+        lay = self.layout
+        col = lay.column(align=True)
+        copy_props = props.get_copy_props()
+        for p in copy_props:
+            col.prop(p, "is_copy", text=p.name, icon=p.icon, toggle=True)
+        lay.operator(UFRP_OP_ReloadCopyProps.bl_idname, icon="FILE_REFRESH")  
 
 
 class UFRP_UL_layers(UIList):
@@ -71,8 +76,8 @@ class UFRP_MT_manager_context_menu(Menu):
         lay.operator(UFRP_OP_MoveLayer.bl_idname, icon="TRIA_UP_BAR", text="Move to Top").direction = "TOP"
         lay.operator(UFRP_OP_MoveLayer.bl_idname, icon="TRIA_DOWN_BAR", text="Move to Bottom").direction = "BOTTOM"
         lay.separator()
-        lay.operator(UFRP_OP_SortLayers.bl_idname, icon="SORTALPHA", text="Sort by Name",).is_reverse = False
-        lay.operator(UFRP_OP_SortLayers.bl_idname, icon="ARROW_LEFTRIGHT", text="Sort reverse").is_reverse = True
+        lay.operator(UFRP_OP_SortLayers.bl_idname, icon="SORT_ASC", text="Sort by Name",).is_reverse = False
+        lay.operator(UFRP_OP_SortLayers.bl_idname, icon="SORT_DESC", text="Sort reverse").is_reverse = True
         lay.separator()
         lay.operator(UFRP_OP_batch.bl_idname, text="Enable all", icon_value = icons.get_checked_id()).state = True
         lay.operator(UFRP_OP_batch.bl_idname, text="Disable all", icon_value = icons.get_unchecked_id()).state = False
@@ -100,10 +105,11 @@ class UFRP_PT_layer_manager(Panel):
         row.prop(context.scene.ufrp, "is_copy_holdout", text="", icon="HOLDOUT_ON", toggle=True)
         row.prop(context.scene.ufrp, "is_copy_indirect_only", text="", icon="INDIRECT_ONLY_ON", toggle=True)
         row.separator()
-        row.prop(context.scene.ufrp, "is_copy_passes", text="Passes", toggle=True)
+        row.prop(context.scene.ufrp, "is_copy_passes", text="Properties", toggle=True)
+        row.popover(panel=UFRP_PT_properties_filter.bl_idname, text="", icon="FILTER")
         row.separator()
-        row.operator(UFRP_OP_CopyLayerSettings.bl_idname, text="", icon="COPYDOWN")
-        row.operator(UFRP_OP_PasteLayerSettings.bl_idname, text="", icon="PASTEDOWN")
+        row.operator(UFRP_OP_CopyLayer.bl_idname, text="", icon="COPYDOWN")
+        row.operator(UFRP_OP_PasteLayer.bl_idname, text="", icon="PASTEDOWN")
         # col2 (sidebar)
         col2.operator(UFRP_OP_ViewLayerAdd.bl_idname, icon="ADD", text="")
         col2.operator(UFRP_OP_ViewLayerRemove.bl_idname, icon="REMOVE", text="")
