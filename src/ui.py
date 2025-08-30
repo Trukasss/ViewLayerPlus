@@ -106,6 +106,7 @@ class UFRP_PT_layer_manager(Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "view_layer"
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         lay = self.layout
@@ -121,7 +122,7 @@ class UFRP_PT_layer_manager(Panel):
         row.prop(context.scene.ufrp, "is_copy_holdout", text="", icon="HOLDOUT_ON", toggle=True)
         row.prop(context.scene.ufrp, "is_copy_indirect_only", text="", icon="INDIRECT_ONLY_ON", toggle=True)
         row.separator()
-        row.prop(context.scene.ufrp, "is_copy_passes", text="Properties", toggle=True)
+        row.prop(context.scene.ufrp, "is_copy_passes", text="Passes", toggle=True)
         row.popover(panel=UFRP_PT_properties_filter.bl_idname, text="", icon="FILTER")
         row.separator()
         row.operator(UFRP_OP_CopyLayer.bl_idname, text="", icon="COPYDOWN")

@@ -6,11 +6,17 @@ from bpy.props import IntProperty, CollectionProperty, BoolProperty, StringPrope
 def populate_copy_props(context: Context):
     copy_props = get_copy_props()
     copy_props.clear()
-    for rna_prop in context.view_layer.bl_rna.properties:
-        if rna_prop.is_readonly and not isinstance(rna_prop, bpy.types.CollectionProperty):
+    props = [rna_prop for rna_prop in context.view_layer.bl_rna.properties]
+    props += [rna_prop for rna_prop in context.view_layer.cycles.bl_rna.properties]
+    props += [rna_prop for rna_prop in context.view_layer.eevee.bl_rna.properties]
+    for rna_prop in props:
+        #TODO WIP, add support for all properties (ex: aovs)
+        # if rna_prop.is_readonly and not isinstance(rna_prop, bpy.types.CollectionProperty):
+        #     continue
+        # if rna_prop.identifier == "name":
+        #     continue # never copy layer name
+        if not rna_prop.identifier.startswith("use_pass_"):
             continue
-        if rna_prop.identifier == "name":
-            continue # never copy layer name
         copy_props: bpy.types.CollectionProperty
         new_prop = copy_props.add()
         new_prop: UFRP_layer_setting_copy

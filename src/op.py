@@ -275,41 +275,53 @@ class UFRP_OP_PasteLayer(Operator):
         for src_child, dst_child in zip(s.children, t.children):
             __class__.copy_layercollection_settings(src_child, dst_child)
 
+    #TODO (wip) add all proprety support (ex: aovs)
+    # @staticmethod
+    # def copy_attrs(object_source, object_target, filter=[]):
+    #     """Recursively copy blender's attributes"""
+    #     assert type(object_source) == type(object_target)
+    #     if object_source == object_target:
+    #         return
+    #     for rna_prop in object_source.bl_rna.properties:
+    #         prop_key = rna_prop.identifier
+    #         if filter and prop_key not in filter:
+    #             continue
+    #         value_src = getattr(object_source, prop_key)
+    #         value_trg = getattr(object_target, prop_key)
+    #         # Collection props (ex: aovs)
+    #         if isinstance(rna_prop, bpy.types.CollectionProperty):
+    #             if not getattr(value_trg, "add", False) or not getattr(value_trg, "remove", False):
+    #                 continue # cannot edit collection properties props
+    #             for coll_prop in value_trg:
+    #                 value_trg.remove(coll_prop)
+    #             for coll_prop in value_src:
+    #                 new_prop = value_trg.add()
+    #                 __class__.copy_attrs(coll_prop, new_prop, filter)
+    #             continue
+    #         if rna_prop.is_readonly:
+    #             continue
+    #         # Simple prop
+    #         setattr(object_target, prop_key, value_src)
+    #         #TODO does not work for eevee ? no error messages
+
     @staticmethod
-    def copy_attrs(object_source, object_target, filter=[]):
-        """Recursively copy blender's attributes"""
-        assert type(object_source) == type(object_target)
-        if object_source == object_target:
-            return
-        for rna_prop in object_source.bl_rna.properties:
-            prop_key = rna_prop.identifier
-            if filter and prop_key not in filter:
-                continue
-            value_src = getattr(object_source, prop_key)
-            value_trg = getattr(object_target, prop_key)
-            # Collection props (ex: aovs)
-            if isinstance(rna_prop, bpy.types.CollectionProperty):
-                if not getattr(value_trg, "add", False) or not getattr(value_trg, "remove", False):
-                    continue # cannot edit collection properties props
-                for coll_prop in value_trg:
-                    value_trg.remove(coll_prop)
-                for coll_prop in value_src:
-                    new_prop = value_trg.add()
-                    __class__.copy_attrs(coll_prop, new_prop, filter)
-                continue
-            if rna_prop.is_readonly:
-                continue
-            # Simple prop
-            setattr(object_target, prop_key, value_src)
-            #TODO does not work for eevee ? no error messages
+    def copy_attrs(vl_src, vl_trg, filter):
+        for attr in dir(vl_src):
+            if attr.startswith("use_pass"):
+                setattr(vl_trg, attr, attr in filter)
+
 
     def execute(self, context: Context):
         # checks
-        if (not props.is_copy_exclude() 
+        copy_props = [p.identifier for p in props.get_copy_props() if p.is_copy]
+        if ((not props.is_copy_exclude() 
             and not props.is_copy_holdout() 
             and not props.is_copy_indirect_only() 
             and not props.is_copy_hide_viewport()
-            and not props.is_copy_passes()):
+            ) and (
+            not props.is_copy_passes()
+            or (props.is_copy_passes() and not copy_props)
+            )):
             self.report({"WARNING"}, f"No settings to Copy/Paste, please check at least one option")
             return {"CANCELLED"}
         source_vl_name = props.get_layer_source()
@@ -327,13 +339,10 @@ class UFRP_OP_PasteLayer(Operator):
             return {"CANCELLED"}
         # copy/paste
         self.copy_layercollection_settings(source_vl.layer_collection, target_vl.layer_collection)
-        if props.is_copy_passes():
-            filter = [p.identifier for p in props.get_copy_props() if not p.is_copy]
-            self.copy_attrs(source_vl, target_vl, filter)
-            if "cycles" in filter:
-                self.copy_attrs(source_vl.cycles, target_vl.cycles)
-            if not "cycles" in filter:
-                self.copy_attrs(source_vl.eevee, target_vl.eevee)
+        if props.is_copy_passes() and copy_props:
+            self.copy_attrs(source_vl, target_vl, copy_props)
+            self.copy_attrs(source_vl.cycles, target_vl.cycles, copy_props)
+            self.copy_attrs(source_vl.eevee, target_vl.eevee, copy_props)
         self.report({"INFO"}, f"Pasted settings from '{source_vl.name}' to '{target_vl.name}'")
         return {"FINISHED"}
 
