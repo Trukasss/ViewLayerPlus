@@ -207,6 +207,26 @@ class UFRP_OP_ViewLayerSwitch(Operator):
         return {"FINISHED"}
 
 
+class UFRP_OP_AllCopyProps(Operator):
+    """Check/Uncheck all View Layers properties for copy"""
+    bl_idname = "ufrp.all_copy_props"
+    bl_label = "Check/Uncheck all"
+    bl_options = {"REGISTER", "UNDO"}
+    action: bpy.props.StringProperty(name="Action for all props") # type: ignore
+
+    def execute(self, context: Context):
+        copy_props = props.get_copy_props()
+        for p in copy_props:
+            match self.action:
+                case "ON":
+                    p.is_copy = True
+                case "OFF":
+                    p.is_copy = False
+                case "TOGGLE":
+                    p.is_copy = not p.is_copy
+        return {"FINISHED"}
+
+
 class UFRP_OP_ReloadCopyProps(Operator):
     """Reload View Layers copiable properties"""
     bl_idname = "ufrp.reload_copy_props"
@@ -261,11 +281,11 @@ class UFRP_OP_PasteLayer(Operator):
         if object_source == object_target:
             return
         for rna_prop in object_source.bl_rna.properties:
-            prop_name = rna_prop.identifier
-            if prop_name in exclude:
+            prop_key = rna_prop.identifier
+            if prop_key in exclude:
                 continue
-            value_src = getattr(object_source, prop_name)
-            value_trg = getattr(object_target, prop_name)
+            value_src = getattr(object_source, prop_key)
+            value_trg = getattr(object_target, prop_key)
             # Collection props (ex: aovs)
             if isinstance(rna_prop, bpy.types.CollectionProperty):
                 if not getattr(value_trg, "add", False) or not getattr(value_trg, "remove", False):
@@ -279,7 +299,7 @@ class UFRP_OP_PasteLayer(Operator):
             if rna_prop.is_readonly:
                 continue
             # Simple prop
-            setattr(object_target, prop_name, value_src)
+            setattr(object_target, prop_key, value_src)
             #TODO does not work for eevee ? no error messages
 
     def execute(self, context: Context):
@@ -307,7 +327,7 @@ class UFRP_OP_PasteLayer(Operator):
         # copy/paste
         self.copy_layercollection_settings(source_vl.layer_collection, target_vl.layer_collection)
         if props.is_copy_passes():
-            props_exclude = [p.name for p in props.get_copy_props() if not p.is_copy]
+            props_exclude = [p.identifier for p in props.get_copy_props() if not p.is_copy]
             self.copy_attrs(source_vl, target_vl, props_exclude)
             if not "cycles" in props_exclude:
                 self.copy_attrs(source_vl.cycles, target_vl.cycles)

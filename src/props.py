@@ -10,6 +10,8 @@ def populate_copy_props(context: Context):
     for rna_prop in context.view_layer.bl_rna.properties:
         if rna_prop.is_readonly and not isinstance(rna_prop, bpy.types.CollectionProperty):
             continue
+        if rna_prop.identifier == "name":
+            continue # never copy layer name
         copy_props: bpy.types.CollectionProperty
         new_prop = copy_props.add()
         new_prop: UFRP_layer_setting_copy
@@ -30,8 +32,7 @@ def populate_copy_props(context: Context):
                 new_prop.icon = "SYNTAX_OFF"
             case _:
                 new_prop.icon = "NONE"
-        if rna_prop.identifier == "name":
-            new_prop.is_copy = False
+
 
 class UFRP_layer_setting_copy(PropertyGroup):
     name: StringProperty() # type: ignore

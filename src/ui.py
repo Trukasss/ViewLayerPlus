@@ -8,6 +8,7 @@ from .op import (
     UFRP_OP_OnlyUnmuted,
     UFRP_OP_OnlySelected,
     UFRP_OP_RenderLayerSwitch,
+    UFRP_OP_AllCopyProps,
     UFRP_OP_ReloadCopyProps,
     UFRP_OP_CopyLayer,
     UFRP_OP_PasteLayer,
@@ -46,13 +47,25 @@ class UFRP_PT_properties_filter(Panel):
     bl_context = "view_layer"
     bl_options = {"INSTANCED"}
 
+    def draw_options_row(self, layout):
+        row = layout.row(align=True)
+        row.operator(UFRP_OP_AllCopyProps.bl_idname, text="", icon="RESTRICT_SELECT_OFF").action = "ON"
+        row.operator(UFRP_OP_AllCopyProps.bl_idname, text="", icon="RESTRICT_SELECT_ON").action = "OFF"
+        row.operator(UFRP_OP_AllCopyProps.bl_idname, text="", icon="UV_SYNC_SELECT").action = "TOGGLE"
+        row.separator()
+        row.operator(UFRP_OP_ReloadCopyProps.bl_idname, text="", icon="FILE_REFRESH")
+
     def draw(self, context: Context):
         lay = self.layout
-        col = lay.column(align=True)
         copy_props = props.get_copy_props()
+        if not copy_props:
+            lay.operator(UFRP_OP_ReloadCopyProps.bl_idname, icon="FILE_REFRESH")  
+            return
+        self.draw_options_row(lay)
+        col = lay.column(align=True)
         for p in copy_props:
             col.prop(p, "is_copy", text=p.name, icon=p.icon, toggle=True)
-        lay.operator(UFRP_OP_ReloadCopyProps.bl_idname, icon="FILE_REFRESH")  
+        self.draw_options_row(lay)
 
 
 class UFRP_UL_layers(UIList):
