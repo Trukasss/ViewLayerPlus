@@ -1,17 +1,20 @@
 import bpy
 from bpy.types import PropertyGroup
-from bpy.props import IntProperty, EnumProperty, BoolProperty, StringProperty
+from bpy.props import IntProperty, CollectionProperty, BoolProperty, StringProperty
+from .op import UFRP_OP_ViewLayerSwitch
 
 
 class UFRP_properties(PropertyGroup):
     index: IntProperty(name="View Layer Index") # type: ignore
     source: StringProperty(name="View Layer copy source") # type: ignore
-    show_switch: BoolProperty(name="Show 'Switch to layer' operator", default=True) # type: ignore
+    show_switch: BoolProperty(name=f"Show '{UFRP_OP_ViewLayerSwitch.bl_label}' operator", default=True) # type: ignore
     show_use: BoolProperty(name="Show 'Use For Rendering' property", default=True) # type: ignore
     is_copy_exclude: BoolProperty(name="Copy/Paste 'exclude' setting", default=True) # type: ignore
     is_copy_holdout: BoolProperty(name="Copy/Paste 'holdout' setting", default=True) # type: ignore
     is_copy_indirect_only: BoolProperty(name="Copy/Paste 'indirect_only' setting", default=True) # type: ignore
     is_copy_hide_viewport: BoolProperty(name="Copy/Paste 'hide_viewport' setting", default=True) # type: ignore
+    is_copy_passes: BoolProperty(name="Copy/Paste View Layer passes setting", default=True) # type: ignore
+    copy_settings: CollectionProperty(type=bpy.types.StringProperty, name="View Layer settings to copy") # type: ignore
 
 
 def get_layer_index():
@@ -43,3 +46,9 @@ def is_copy_indirect_only():
 
 def is_copy_hide_viewport():
     return bpy.context.scene.ufrp.is_copy_hide_viewport
+
+def is_copy_passes():
+    return bpy.context.scene.ufrp.is_copy_passes
+
+def get_copy_settings():
+    return bpy.context.scene.ufrp.copy_settings

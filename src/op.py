@@ -1,11 +1,11 @@
 import bpy
-from bpy.types import Operator, Context, Scene, ViewLayer, CompositorNodeRLayers, Collection, CollectionProperty, LayerCollection
+from bpy.types import Operator, Context, Scene, ViewLayer, CompositorNodeRLayers, Collection, CollectionProperty, LayerCollection, bpy_struct, bpy_prop_collection
 from bpy.props import BoolProperty
 import json
 import re
 from . import props
 
-
+############## COMPOSITING ##############
 def get_render_node_scene_layer(node: CompositorNodeRLayers):
     if node.type != "R_LAYERS":
         raise ValueError("Active node must be of Render Layer type")
@@ -49,13 +49,13 @@ def use_view_layers(layers: list[ViewLayer], include=True):
 
 
 class UFRP_OP_batch(Operator):
-    """Set all view layers 'Use for rendering' property"""
+    """Set all View Layers 'Use for rendering' property"""
     bl_idname = "ufrp.batch"
     bl_label = "Use for rendering batch"
     bl_options = {"REGISTER", "UNDO"}
     state: BoolProperty(
         name="UseForRenderingState", 
-        description="Check or uncheck all view layers 'Use for rendering' property"
+        description="Check or uncheck all View Layers 'Use for rendering' property"
         ) # type: ignore
 
     def execute(self, context: Context):
@@ -68,9 +68,9 @@ class UFRP_OP_batch(Operator):
             node: CompositorNodeRLayers
             node.mute = not self.state
         if self.state == True:
-            self.report({"INFO"}, f"Enabled all {nb} view layers for rendering")
+            self.report({"INFO"}, f"Enabled all {nb} View Layers for rendering")
         else:
-            self.report({"INFO"}, f"Disabled all {nb} view layers from rendering")
+            self.report({"INFO"}, f"Disabled all {nb} View Layers from rendering")
         return {"FINISHED"}
 
 
@@ -91,7 +91,7 @@ class UFRP_OP_OnlyUnmuted(Operator):
             layers_to_use.append(layer)
         # only activate layers to use
         use_view_layers(layers_to_use, include=True)
-        self.report({"INFO"}, f"Enable only {len(layers_to_use)} active view layers for rendering")
+        self.report({"INFO"}, f"Enable only {len(layers_to_use)} active View Layers for rendering")
         return {"FINISHED"}
 
 
@@ -124,12 +124,12 @@ class UFRP_OP_OnlySelected(Operator):
                 continue
             layers_to_use.append(layer)
         use_view_layers(layers_to_use, include=True)
-        self.report({"INFO"}, f"Enable only {len(layers_to_use)} selected view layers for rendering")
+        self.report({"INFO"}, f"Enable only {len(layers_to_use)} selected View Layers for rendering")
         return {"FINISHED"}
 
 
 class UFRP_OP_RenderLayerSwitch(Operator):
-    """Switch to active render layer node's view layer"""
+    """Switch to active render layer node's View Layer"""
     bl_idname = "ufrp.switch_render_layer"
     bl_label = "Switch to active Render Layer Node"
     bl_options = {"REGISTER", "UNDO"}
@@ -149,25 +149,24 @@ class UFRP_OP_RenderLayerSwitch(Operator):
             return {"CANCELLED"}
         scene, layer = get_render_node_scene_layer(node)
         if not scene or not layer:
-            self.report({"ERROR"}, f"Could not find scene '{scene}' and view layer '{layer}'")
+            self.report({"ERROR"}, f"Could not find scene '{scene}' and View Layer '{layer}'")
             return {"CANCELLED"}
         context.window.scene = scene
         context.window.view_layer = layer
-        self.report({"INFO"}, f"Switched to '{layer.name}' view layer")
+        self.report({"INFO"}, f"Switched to '{layer.name}' View Layer")
         return {"FINISHED"}
 
 
 ############## LAYER MANAGER ##############
-
 class UFRP_OP_ViewLayerAdd(Operator):
     """Add a new View Layer from selected"""
     bl_idname = "ufrp.view_layer_add"
     bl_label = "Add a new View Layer"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context):
+    def execute(self, context: Context):
         layer_index = props.get_layer_index()
-        #TODO check si index correct, peut-etre interdir en dehors du nombre de view layer dans la proprietee directement
+        #TODO check si index correct, peut-etre interdir en dehors du nombre de View Layer dans la proprietee directement
         selected_layer = context.scene.view_layers[layer_index]
         context.scene.view_layers.new(selected_layer.name)
         props.set_layer_index(layer_index + 1)
@@ -200,7 +199,7 @@ class UFRP_OP_ViewLayerSwitch(Operator):
     bl_options = {"REGISTER", "UNDO"}
     layer_name: bpy.props.StringProperty("View Layer name") # type: ignore
 
-    def execute(self, context):
+    def execute(self, context: Context):
         selected_layer = context.scene.view_layers.get(self.layer_name)
         context.window.view_layer = selected_layer
         switched_index = context.scene.view_layers.keys().index(self.layer_name)
@@ -214,7 +213,7 @@ class UFRP_OP_CopyLayerSettings(Operator):
     bl_label = "Copy settings"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context):
+    def execute(self, context: Context):
         layer_index = props.get_layer_index()
         selected_layer = context.scene.view_layers[layer_index]
         props.set_layer_source(selected_layer.name)
@@ -230,7 +229,7 @@ class UFRP_OP_PasteLayerSettings(Operator):
 
     @staticmethod
     def copy_layercollection_settings(source_lc: LayerCollection, target_lc: LayerCollection):
-        """Recursively copy ViewLayer's Layer Collections settings"""
+        """Recursively copy View Layer's Layer Collections settings"""
         s = source_lc
         t = target_lc
         if props.is_copy_exclude():
@@ -244,30 +243,70 @@ class UFRP_OP_PasteLayerSettings(Operator):
         for src_child, dst_child in zip(s.children, t.children):
             __class__.copy_layercollection_settings(src_child, dst_child)
 
-    def execute(self, context):
+    @staticmethod
+    def copy_attrs(object_source, object_target, passes_only=True):
+        """Recursively copy blender's attributes"""
+        for attr_name in dir(object_source):
+            if passes_only and not attr_name.startswith("use_"):
+                continue
+            # ingore unsettable attrs
+            if isinstance(object_source, ViewLayer) and attr_name == "name":
+                continue # don't change View Layer's names
+            if attr_name.startswith("_"):
+                continue
+            attr_src = getattr(object_source, attr_name)
+            if callable(attr_src):
+                continue
+            # collection props
+            if isinstance(attr_src, bpy_prop_collection):
+                if not getattr(attr_src, "add", False):
+                    continue
+                if not getattr(attr_src, "remove", False):
+                    continue
+                attr_trg = getattr(object_target, attr_name)
+                for prop_trg in attr_trg:
+                    attr_trg.remove(prop_trg)
+                for prop in attr_src:
+                    new_prop = attr_trg.add()
+                    __class__.copy_attrs(prop, new_prop, passes_only)
+                continue
+            # simple props/variables
+            try:
+                setattr(object_target, attr_name, attr_src)
+            except AttributeError as e:
+                if "read-only" in str(e):
+                    continue
+                print(f"Could not set attr '{attr_name}': {e}")
+
+
+    def execute(self, context: Context):
         if (not props.is_copy_exclude() 
             and not props.is_copy_holdout() 
             and not props.is_copy_indirect_only() 
-            and not props.is_copy_hide_viewport()):
-            self.report({"WARNING"}, f"No settings to Copy/Paste, please check at least one setting")
+            and not props.is_copy_hide_viewport()
+            and not props.is_copy_passes()):
+            self.report({"WARNING"}, f"No settings to Copy/Paste, please check at least one option")
             return {"CANCELLED"}
         source_vl_name = props.get_layer_source()
         if not source_vl_name:
-            self.report({"WARNING"}, f"Please first copy ViewLayer")
+            self.report({"WARNING"}, f"Please first copy a View Layer")
             return {"CANCELLED"}
         source_vl = context.scene.view_layers.get(source_vl_name, None)
         if not source_vl:
-            self.report({"WARNING"}, f"Source '{source_vl_name}' View Layer is missing, please copy first")
+            self.report({"WARNING"}, f"Source '{source_vl_name}' View Layer is missing, please new View Layer")
             return {"CANCELLED"}
         layer_index = props.get_layer_index()
         target_vl = context.scene.view_layers[layer_index]
         self.copy_layercollection_settings(source_vl.layer_collection, target_vl.layer_collection)
+        if props.is_copy_passes():
+            print("=======================") #TODO DEBUG
+            self.copy_attrs(source_vl, target_vl, True)
         self.report({"INFO"}, f"Pasted settings from '{source_vl.name}' to '{target_vl.name}'")
         return {"FINISHED"}
 
 
 class UFRP_OP_MoveLayer(Operator):
-    """Move selected View layer up or down"""
+    """Move selected View Layer up or down"""
     bl_idname = "ufrp.move_layer"
     bl_label = "Move up/down"
     bl_options = {"REGISTER", "UNDO"}
@@ -275,7 +314,7 @@ class UFRP_OP_MoveLayer(Operator):
 
     @classmethod
     def poll(cls, context: Context):
-        cls.poll_message_set("Must have at least two view layers")
+        cls.poll_message_set("Must have at least two View Layers")
         return len(context.scene.view_layers) > 1
 
     def execute(self, context: Context):
@@ -302,7 +341,7 @@ class UFRP_OP_MoveLayer(Operator):
 
 
 class UFRP_OP_SortLayers(Operator):
-    """Sort View layers by name"""
+    """Sort View Layers by name"""
     bl_idname = "ufrp.sort_layers"
     bl_label = "Sort layers"
     bl_options = {"REGISTER", "UNDO"}
@@ -310,11 +349,11 @@ class UFRP_OP_SortLayers(Operator):
 
     @classmethod
     def poll(cls, context: Context):
-        cls.poll_message_set("Must have at least two view layers")
+        cls.poll_message_set("Must have at least two View Layers")
         return len(context.scene.view_layers) > 1
     
     @staticmethod
-    def natural_sort_key(s, _nsre=re.compile('([0-9]+)')):
+    def natural_sort_key(s, _nsre=re.compile("([0-9]+)")):
         """Sort a string in a natural way
         https://stackoverflow.com/a/16090640"""
         return [int(text) if text.isdigit() else text.lower() for text in _nsre.split(s)]

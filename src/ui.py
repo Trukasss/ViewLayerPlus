@@ -19,14 +19,14 @@ from .op import (
 from . import icons
 
 
-class UFRP_PT_manager_filter(Panel):
+class UFRP_PT_layer_filter(Panel):
     """Show View Layer manager list options"""
     bl_label = "ViewLayerPlus Manager filter"
-    bl_idname = "UFRP_PT_manager_filter"
+    bl_idname = "UFRP_PT_layer_filter"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "view_layer"
-    bl_options = {'INSTANCED'}
+    bl_options = {"INSTANCED"}
 
     def draw(self, context: Context):
         lay = self.layout
@@ -34,6 +34,20 @@ class UFRP_PT_manager_filter(Panel):
         row = lay.row(align=True)
         row.prop(context.scene.ufrp, "show_use", text="", icon="CHECKBOX_HLT", toggle=True)
         row.prop(context.scene.ufrp, "show_switch", text="", icon_value=icons.get_switch_id(), toggle=True)
+
+
+class UFRP_PT_settings_filter(Panel):
+    """Choose which View Layer's properties to copy"""
+    bl_label = "ViewLayerPlus copy properties filter"
+    bl_idname = "UFRP_PT_settings_filter"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "view_layer"
+    bl_options = {"INSTANCED"}
+
+    def draw(self, context: Context):
+        props.
+
 
 
 class UFRP_UL_layers(UIList):
@@ -54,10 +68,10 @@ class UFRP_MT_manager_context_menu(Menu):
     bl_label = "ViewLayerPlus manager specials"
     def draw(self, context: Context):
         lay = self.layout
-        lay.operator(UFRP_OP_MoveLayer.bl_idname, icon='TRIA_UP_BAR', text="Move to Top").direction = 'TOP'
-        lay.operator(UFRP_OP_MoveLayer.bl_idname, icon='TRIA_DOWN_BAR', text="Move to Bottom").direction = 'BOTTOM'
+        lay.operator(UFRP_OP_MoveLayer.bl_idname, icon="TRIA_UP_BAR", text="Move to Top").direction = "TOP"
+        lay.operator(UFRP_OP_MoveLayer.bl_idname, icon="TRIA_DOWN_BAR", text="Move to Bottom").direction = "BOTTOM"
         lay.separator()
-        lay.operator(UFRP_OP_SortLayers.bl_idname, icon='SORTALPHA', text="Sort by Name",).is_reverse = False
+        lay.operator(UFRP_OP_SortLayers.bl_idname, icon="SORTALPHA", text="Sort by Name",).is_reverse = False
         lay.operator(UFRP_OP_SortLayers.bl_idname, icon="ARROW_LEFTRIGHT", text="Sort reverse").is_reverse = True
         lay.separator()
         lay.operator(UFRP_OP_batch.bl_idname, text="Enable all", icon_value = icons.get_checked_id()).state = True
@@ -79,27 +93,26 @@ class UFRP_PT_layer_manager(Panel):
         col2 = row.column(align=True)
         # col1 (main)
         col1.template_list("UFRP_UL_layers", "", context.scene, "view_layers", context.scene.ufrp, "index")
+        col1.label(text="Layer collection settings")
         row = col1.row(align=True)
         row.prop(context.scene.ufrp, "is_copy_exclude", text="", icon="CHECKBOX_HLT", toggle=True)
+        row.prop(context.scene.ufrp, "is_copy_hide_viewport", text="", icon="HIDE_OFF", toggle=True)
         row.prop(context.scene.ufrp, "is_copy_holdout", text="", icon="HOLDOUT_ON", toggle=True)
         row.prop(context.scene.ufrp, "is_copy_indirect_only", text="", icon="INDIRECT_ONLY_ON", toggle=True)
-        row.prop(context.scene.ufrp, "is_copy_hide_viewport", text="", icon="RESTRICT_VIEW_OFF", toggle=True)
+        row.separator()
+        row.prop(context.scene.ufrp, "is_copy_passes", text="Passes", toggle=True)
         row.separator()
         row.operator(UFRP_OP_CopyLayerSettings.bl_idname, text="", icon="COPYDOWN")
         row.operator(UFRP_OP_PasteLayerSettings.bl_idname, text="", icon="PASTEDOWN")
         # col2 (sidebar)
-        col2.operator(UFRP_OP_ViewLayerAdd.bl_idname, icon='ADD', text="")
-        col2.operator(UFRP_OP_ViewLayerRemove.bl_idname, icon='REMOVE', text="")
+        col2.operator(UFRP_OP_ViewLayerAdd.bl_idname, icon="ADD", text="")
+        col2.operator(UFRP_OP_ViewLayerRemove.bl_idname, icon="REMOVE", text="")
         col2.separator()
-        col2.popover(
-            panel="UFRP_PT_manager_filter",
-            text="",
-            icon="FILTER",
-        )
-        col2.menu("UFRP_MT_manager_context_menu", icon='DOWNARROW_HLT', text="")
+        col2.popover(panel=UFRP_PT_layer_filter.bl_idname, text="", icon="FILTER")
+        col2.menu("UFRP_MT_manager_context_menu", icon="DOWNARROW_HLT", text="")
         col2.separator()
-        col2.operator(UFRP_OP_MoveLayer.bl_idname, icon='TRIA_UP', text="").direction = "UP"
-        col2.operator(UFRP_OP_MoveLayer.bl_idname, icon='TRIA_DOWN', text="").direction = "DOWN"
+        col2.operator(UFRP_OP_MoveLayer.bl_idname, icon="TRIA_UP", text="").direction = "UP"
+        col2.operator(UFRP_OP_MoveLayer.bl_idname, icon="TRIA_DOWN", text="").direction = "DOWN"
 
 
 class UFRP_MT_menu(Menu):

@@ -1,6 +1,6 @@
 bl_info = {
     "name": "View Layer Plus",
-    "description": "Quickly check or uncheck view layer's 'Use For Rendering' prop",
+    "description": "Seamlessly extend View Layers management",
     "author": "Lukas Sabaliauskas <lukas_sabaliauskas@hotmail.com>",
     "version": (0, 1, 3),
     "blender": (4, 0, 0),
@@ -41,7 +41,8 @@ def register():
     bpy.utils.register_class(op.UFRP_OP_PasteLayerSettings)
     bpy.utils.register_class(op.UFRP_OP_MoveLayer)
     bpy.utils.register_class(op.UFRP_OP_SortLayers)
-    bpy.utils.register_class(ui.UFRP_PT_manager_filter)
+    bpy.utils.register_class(ui.UFRP_PT_layer_filter)
+    bpy.utils.register_class(ui.UFRP_PT_settings_filter)
     bpy.utils.register_class(ui.UFRP_MT_menu)
     bpy.utils.register_class(ui.UFRP_UL_layers)
     bpy.utils.register_class(ui.UFRP_MT_manager_context_menu)
@@ -57,7 +58,8 @@ def unregister():
     bpy.utils.unregister_class(ui.UFRP_MT_manager_context_menu)
     bpy.utils.unregister_class(ui.UFRP_UL_layers)
     bpy.utils.unregister_class(ui.UFRP_MT_menu)
-    bpy.utils.unregister_class(ui.UFRP_PT_manager_filter)
+    bpy.utils.unregister_class(ui.UFRP_PT_settings_filter)
+    bpy.utils.unregister_class(ui.UFRP_PT_layer_filter)
     bpy.utils.unregister_class(op.UFRP_OP_SortLayers)
     bpy.utils.unregister_class(op.UFRP_OP_MoveLayer)
     bpy.utils.unregister_class(op.UFRP_OP_PasteLayerSettings)
