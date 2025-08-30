@@ -1,7 +1,6 @@
 import bpy
 from bpy.types import PropertyGroup, Context
 from bpy.props import IntProperty, CollectionProperty, BoolProperty, StringProperty, EnumProperty, PointerProperty
-from .op import UFRP_OP_ViewLayerSwitch
 
 
 def populate_copy_props(context: Context):
@@ -44,7 +43,6 @@ class UFRP_layer_setting_copy(PropertyGroup):
 class UFRP_properties(PropertyGroup):
     index: IntProperty(name="View Layer Index") # type: ignore
     source: StringProperty(name="View Layer copy source") # type: ignore
-    show_switch: BoolProperty(name=f"Show '{UFRP_OP_ViewLayerSwitch.bl_label}' operator", default=True) # type: ignore
     show_use: BoolProperty(name="Show 'Use For Rendering' property", default=True) # type: ignore
     is_copy_exclude: BoolProperty(name="Copy/Paste 'exclude' setting", default=True) # type: ignore
     is_copy_holdout: BoolProperty(name="Copy/Paste 'holdout' setting", default=True) # type: ignore
@@ -59,9 +57,6 @@ def get_layer_index():
 
 def set_layer_index(index: int):
     bpy.context.scene.ufrp.index = index
-
-def is_show_switch():
-    return bpy.context.scene.ufrp.show_switch
 
 def is_show_use():
     return bpy.context.scene.ufrp.show_use

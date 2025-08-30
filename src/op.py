@@ -159,24 +159,24 @@ class UFRP_OP_RenderLayerSwitch(Operator):
 
 ############## LAYER MANAGER ##############
 class UFRP_OP_ViewLayerAdd(Operator):
-    """Add a new View Layer from selected"""
+    """Add a new View Layer from highlighted, similar as 'NEW'"""
     bl_idname = "ufrp.view_layer_add"
-    bl_label = "Add a new View Layer"
+    bl_label = "Add View Layer"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: Context):
         layer_index = props.get_layer_index()
         #TODO check si index correct, peut-etre interdir en dehors du nombre de View Layer dans la proprietee directement
-        selected_layer = context.scene.view_layers[layer_index]
-        context.scene.view_layers.new(selected_layer.name)
-        props.set_layer_index(layer_index + 1)
+        highlighted_layer = context.scene.view_layers[layer_index]
+        context.scene.view_layers.new(highlighted_layer.name)
+        props.set_layer_index(len(context.scene.view_layers) - 1)
         return {"FINISHED"}
 
 
 class UFRP_OP_ViewLayerRemove(Operator):
-    """Remove selected View Layer"""
+    """Remove highlighted View Layer"""
     bl_idname = "ufrp.view_layer_remove"
-    bl_label = "Remove the View Layer"
+    bl_label = "Remove View Layer"
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
@@ -186,24 +186,25 @@ class UFRP_OP_ViewLayerRemove(Operator):
 
     def execute(self, context):
         layer_index = props.get_layer_index()
-        selected_layer = context.scene.view_layers[layer_index]
-        context.scene.view_layers.remove(selected_layer)
+        highlighted_layer = context.scene.view_layers[layer_index]
+        context.scene.view_layers.remove(highlighted_layer)
         props.set_layer_index(layer_index - 1)
         return {"FINISHED"}
 
 
 class UFRP_OP_ViewLayerSwitch(Operator):
-    """Switch to manager's View Layer"""
+    """Switch to hightlighted View Layer"""
     bl_idname = "ufrp.switch_view_layer"
     bl_label = "Switch to View Layer"
-    bl_options = {"REGISTER", "UNDO"}
+    bl_options = {"REGISTER"}
     layer_name: bpy.props.StringProperty("View Layer name") # type: ignore
 
     def execute(self, context: Context):
-        selected_layer = context.scene.view_layers.get(self.layer_name)
-        context.window.view_layer = selected_layer
+        highlighted_layer = context.scene.view_layers.get(self.layer_name)
+        context.window.view_layer = highlighted_layer
         switched_index = context.scene.view_layers.keys().index(self.layer_name)
         props.set_layer_index(switched_index)
+        self.report({"INFO"}, f"Switched to '{self.layer_name}'")
         return {"FINISHED"}
 
 
@@ -239,16 +240,16 @@ class UFRP_OP_ReloadCopyProps(Operator):
 
 
 class UFRP_OP_CopyLayer(Operator):
-    """Set selected View Layer's as copy source"""
+    """Set highlighted View Layer's as copy source"""
     bl_idname = "ufrp.copy_layer_settings"
     bl_label = "Copy settings"
-    bl_options = {"REGISTER", "UNDO"}
+    bl_options = {"REGISTER"}
 
     def execute(self, context: Context):
         layer_index = props.get_layer_index()
-        selected_layer = context.scene.view_layers[layer_index]
-        props.set_layer_source(selected_layer.name)
-        self.report({"INFO"}, f"Set '{selected_layer.name}' as copy source")
+        highlighted_layer = context.scene.view_layers[layer_index]
+        props.set_layer_source(highlighted_layer.name)
+        self.report({"INFO"}, f"Set '{highlighted_layer.name}' as copy source")
         return {"FINISHED"}
 
 
@@ -275,14 +276,14 @@ class UFRP_OP_PasteLayer(Operator):
             __class__.copy_layercollection_settings(src_child, dst_child)
 
     @staticmethod
-    def copy_attrs(object_source, object_target, exclude=[]):
+    def copy_attrs(object_source, object_target, filter=[]):
         """Recursively copy blender's attributes"""
         assert type(object_source) == type(object_target)
         if object_source == object_target:
             return
         for rna_prop in object_source.bl_rna.properties:
             prop_key = rna_prop.identifier
-            if prop_key in exclude:
+            if filter and prop_key not in filter:
                 continue
             value_src = getattr(object_source, prop_key)
             value_trg = getattr(object_target, prop_key)
@@ -294,7 +295,7 @@ class UFRP_OP_PasteLayer(Operator):
                     value_trg.remove(coll_prop)
                 for coll_prop in value_src:
                     new_prop = value_trg.add()
-                    __class__.copy_attrs(coll_prop, new_prop, exclude)
+                    __class__.copy_attrs(coll_prop, new_prop, filter)
                 continue
             if rna_prop.is_readonly:
                 continue
@@ -327,20 +328,20 @@ class UFRP_OP_PasteLayer(Operator):
         # copy/paste
         self.copy_layercollection_settings(source_vl.layer_collection, target_vl.layer_collection)
         if props.is_copy_passes():
-            props_exclude = [p.identifier for p in props.get_copy_props() if not p.is_copy]
-            self.copy_attrs(source_vl, target_vl, props_exclude)
-            if not "cycles" in props_exclude:
+            filter = [p.identifier for p in props.get_copy_props() if not p.is_copy]
+            self.copy_attrs(source_vl, target_vl, filter)
+            if "cycles" in filter:
                 self.copy_attrs(source_vl.cycles, target_vl.cycles)
-            if not "cycles" in props_exclude:
+            if not "cycles" in filter:
                 self.copy_attrs(source_vl.eevee, target_vl.eevee)
         self.report({"INFO"}, f"Pasted settings from '{source_vl.name}' to '{target_vl.name}'")
         return {"FINISHED"}
 
 
 class UFRP_OP_MoveLayer(Operator):
-    """Move selected View Layer up or down"""
+    """Move highlighted View Layer up/down"""
     bl_idname = "ufrp.move_layer"
-    bl_label = "Move up/down"
+    bl_label = "Move View Layer"
     bl_options = {"REGISTER", "UNDO"}
     direction: bpy.props.StringProperty() #type: ignore
 
@@ -368,7 +369,6 @@ class UFRP_OP_MoveLayer(Operator):
             return {"CANCELLED"}
         context.scene.view_layers.move(layer_index, index_to)
         props.set_layer_index(index_to)
-
         return {"FINISHED"}
 
 
@@ -391,7 +391,7 @@ class UFRP_OP_SortLayers(Operator):
         return [int(text) if text.isdigit() else text.lower() for text in _nsre.split(s)]
 
     def execute(self, context: Context):
-        #TODO update index to keep selected view layer
+        #TODO update index to keep highlighted view layer
         layers = context.scene.view_layers
         sorted_layers = sorted(layers, key=lambda vl: self.natural_sort_key(vl.name))
         if self.is_reverse:

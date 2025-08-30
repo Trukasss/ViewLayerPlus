@@ -69,17 +69,20 @@ class UFRP_PT_properties_filter(Panel):
 
 
 class UFRP_UL_layers(UIList):
+    bl_idname = "UFRP_UL_layers"
+
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
         scene = data
-        current_view_layer = item
-        row = layout.row()
-        row.prop(item, "name", text="", emboss=False, icon_value=icon)
+        row = layout.row(align=True)
+        if item == context.view_layer:
+            # row.label(text="")
+            row.prop(item, "name", text="", emboss=False, icon_value=icon)
+        else:
+            row.operator(UFRP_OP_ViewLayerSwitch.bl_idname, text="", icon_value=icons.get_switch_id()).layer_name = item.name
+            row.prop(item, "name", text="", emboss=False, icon="BLANK1")
         row = row.row(align=True)
         if props.is_show_use():
             row.prop(item, "use", text="")#, toggle=True)
-        if props.is_show_switch():
-            op_switch = row.operator(UFRP_OP_ViewLayerSwitch.bl_idname, text="", icon_value=icons.get_switch_id())
-            op_switch.layer_name = current_view_layer.name
 
 
 class UFRP_MT_manager_context_menu(Menu):
@@ -110,7 +113,7 @@ class UFRP_PT_layer_manager(Panel):
         col1 = row.column()
         col2 = row.column(align=True)
         # col1 (main)
-        col1.template_list("UFRP_UL_layers", "", context.scene, "view_layers", context.scene.ufrp, "index")
+        col1.template_list(UFRP_UL_layers.bl_idname, "", context.scene, "view_layers", context.scene.ufrp, "index")
         col1.label(text="Layer collection settings")
         row = col1.row(align=True)
         row.prop(context.scene.ufrp, "is_copy_exclude", text="", icon="CHECKBOX_HLT", toggle=True)

@@ -56,8 +56,8 @@ def register():
 
 def unregister():
     del bpy.types.Scene.ufrp
-    bpy.types.NODE_MT_editor_menus.remove(ui.draw_comp_menu)
     bpy.types.NODE_MT_context_menu.remove(ui.draw_node_menu)
+    bpy.types.NODE_MT_editor_menus.remove(ui.draw_comp_menu)
     bpy.utils.unregister_class(ui.UFRP_PT_layer_manager)
     bpy.utils.unregister_class(ui.UFRP_MT_manager_context_menu)
     bpy.utils.unregister_class(ui.UFRP_UL_layers)
