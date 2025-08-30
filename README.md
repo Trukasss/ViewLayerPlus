@@ -1,44 +1,28 @@
-# Quickly check or uncheck View Layer's _Use For Rendering_ property !
+# Seamlessly extend View Layers operations !
 
-Enabling and disabling View Layers when setting up your compositing nodes can be annoying as it requieres you to switch to every and each View Layer to access this option, but is necessary when you only want to render a few layers without having to wait for all of them.
+This addon helps the compositing/rendering process in two ways:
 
-# OPERATORS
-This addon resolves this inconvenience by discretly inserting the 5 following operators:
+## 1. COMPOSITING 
 
+This addon discreetly adds a new "View Layer" menu and new entries in the right-click contextual menu for easier access to the compositor panel with the following operators:
 1. Enable all view layers
-
-    ![icon_checked](/src/images/icon_checked.png)
-
 2. Disable all view layers
-
-    ![icon_unchecked](/src/images/icon_unchecked.png)
-
 3. Enable view layers for unmuted render layers only
-
-    ![icon_unmuted](/src/images/icon_unmuted.png)
-
 4. Enable view layers for selected render layers only
-
-    ![icon_selected](/src/images/icon_selected.png)
-
 5. (Bonus) Switch to view layer of the selected render layer
 
-    ![icon_switch](/src/images/icon_switch.png)
+![icon_selected](/presentation/presentation_menu.png) ![icon_selected](/presentation/presentation_contextual.png)
 
 
-# INTERFACE
-You can find these operators under the compositor nodes header:
+## 2. MANAGER
+This addon allows you to manage your View Layers like any other Blender lists:
 
-![icon_selected](/presentation/presentation_menu.png)
+![icon_selected](/presentation/presentation_manager.png)
 
-In the contextual menu:
-
-![icon_selected](/presentation/presentation_contextual.png)
-
-In the view layer property panel:
-
-![icon_selected](/presentation/presentation_view_layer.png)
-
-
+1. Switch to a View Layer 
+2. Enable/Disable View Layer
+3. Add/Remove View Layer
+4. Special Menu for more sorting options
+5. (Bonus) Copy/Paste Layer Collection render settings and View Layers passes
 
 Good Blending :)
