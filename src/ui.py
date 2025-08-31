@@ -63,8 +63,29 @@ class UFRP_PT_properties_filter(Panel):
             return
         self.draw_options_row(lay)
         col = lay.column(align=True)
-        for p in copy_props:
-            col.prop(p, "is_copy", text=p.name, icon=p.icon, toggle=True)
+        props_sorted = sorted(copy_props, key=lambda p: p.type)
+        last_type = copy_props[0].type
+        for p in props_sorted:
+            p: props.UFRP_layer_setting_copy
+            if p.type != last_type:
+                last_type = p.type
+                col.separator()
+            match p.type:
+                case "FLOAT":
+                    icon = "CON_TRANSFORM"
+                case "INT":
+                    icon = "CON_TRANSFORM"
+                case "BOOLEAN":
+                    icon = "CHECKBOX_HLT"
+                case "COLLECTION":
+                    icon = "MOD_ARRAY"
+                case "POINTER":
+                    icon = "FILE_3D"
+                case "STRING":
+                    icon = "SYNTAX_OFF"
+                case _:
+                    icon = "NONE"
+            col.prop(p, "is_copy", text=p.name, icon=icon, toggle=True)
         self.draw_options_row(lay)
 
 
