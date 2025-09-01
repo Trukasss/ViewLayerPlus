@@ -38,10 +38,10 @@ class UFRP_PT_layer_filter(Panel):
         row.prop(context.scene.ufrp, "show_switch", text="", icon_value=icons.get_switch_id(), toggle=True)
 
 
-class UFRP_PT_properties_filter(Panel):
-    """Choose which View Layer's properties to copy"""
-    bl_label = "ViewLayerPlus copy properties filter"
-    bl_idname = "UFRP_PT_settings_filter"
+class UFRP_PT_passes_filter(Panel):
+    """Choose which View Layer's passes to copy"""
+    bl_label = "ViewLayerPlus copy passes filter"
+    bl_idname = "UFRP_PT_passes_filter"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "view_layer"
@@ -57,19 +57,22 @@ class UFRP_PT_properties_filter(Panel):
 
     def draw(self, context: Context):
         lay = self.layout
-        copy_props = props.get_copy_props()
-        if not copy_props:
+        passes = props.get_passes()
+        if not passes:
             lay.operator(UFRP_OP_ReloadCopyProps.bl_idname, icon="FILE_REFRESH")  
             return
         self.draw_options_row(lay)
         col = lay.column(align=True)
-        props_sorted = sorted(copy_props, key=lambda p: p.type)
-        last_type = copy_props[0].type
+        props_sorted = sorted(passes, key=lambda p: f"{p.sub_type}_{p.type}") #TODO sort when creating ?
+        last_type = passes[0].type
+        last_sub_type = passes[0].sub_type
         for p in props_sorted:
-            p: props.UFRP_layer_setting_copy
-            if p.type != last_type:
+            p: props.UFRP_property_passe
+            if p.type != last_type or p.sub_type != last_sub_type:
                 last_type = p.type
+                last_sub_type = p.sub_type
                 col.separator()
+                col.label(text=p.sub_type)
             match p.type:
                 case "FLOAT":
                     icon = "CON_TRANSFORM"
@@ -144,7 +147,9 @@ class UFRP_PT_layer_manager(Panel):
         row.prop(context.scene.ufrp, "is_copy_indirect_only", text="", icon="INDIRECT_ONLY_ON", toggle=True)
         row.separator()
         row.prop(context.scene.ufrp, "is_copy_passes", text="Passes", toggle=True)
-        row.popover(panel=UFRP_PT_properties_filter.bl_idname, text="", icon="FILTER")
+        row.popover(panel=UFRP_PT_passes_filter.bl_idname, text="", icon="FILTER")
+        row.separator()
+        row.prop(context.scene.ufrp, "is_copy_aovs", text="AOVs", toggle=True)
         row.separator()
         row.operator(UFRP_OP_CopyLayer.bl_idname, text="", icon="COPYDOWN")
         row.operator(UFRP_OP_PasteLayer.bl_idname, text="", icon="PASTEDOWN")

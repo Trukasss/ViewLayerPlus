@@ -1,61 +1,48 @@
 import bpy
 from bpy.types import PropertyGroup, Context
 from bpy.props import IntProperty, CollectionProperty, BoolProperty, StringProperty, EnumProperty, PointerProperty
-from cycles.properties import CyclesRenderLayerSettings
 
 
-# # TODO (wip) add all proprety support (ex: eevee, aovs)
-# def is_viewlayer_prop_supported(view_layer: bpy.types.ViewLayer, attr_name: str):
-#     if attr_name == "name": # do not copy view layer name
-#         return False
-#     rna = view_layer.bl_rna.properties[attr_name]
-#     attr = getattr(view_layer, attr_name)
-#     # Support simple writable properties
-#     if isinstance(rna, (
-#         bpy.types.IntProperty,
-#         bpy.types.FloatProperty,
-#         bpy.types.BoolProperty,
-#         bpy.types.StringProperty,
-#         bpy.types.EnumProperty, #TODO needs testing, but should work
-#         )) and not rna.is_readonly:
-#         return True
-#     # Support writable pointer properties & eevee & cycles
-#     if isinstance(rna, bpy.types.PointerProperty):
-#         if not rna.is_readonly:
-#             return True
-#         if isinstance(rna.fixed_type, (
-#             bpy.types.ViewLayerEEVEE,
-#             CyclesRenderLayerSettings,)):
-#             return True
-#         return False
-#     # Support collection properties with add/remove functions
-#     if (
-#         isinstance(rna, bpy.types.CollectionProperty)
-#         and hasattr(attr, "add")
-#         and hasattr(attr, "remove")
-#         ):
-#         return True
-#     return False
+def is_prop_copyable(rna_prop):
+    if isinstance(rna_prop, (
+        bpy.types.IntProperty,
+        bpy.types.FloatProperty,
+        bpy.types.BoolProperty,
+        bpy.types.StringProperty,
+        bpy.types.EnumProperty, #TODO needs testing, but should work
+        )) and not rna_prop.is_readonly:
+        return True
+    return False
 
-
-def populate_copy_props(context: Context):
-    copy_props = get_copy_props()
-    copy_props.clear()
+def populate_prop_passes(context: Context):
+    def new(name, identifier, type, sub_type=""):
+        if identifier == "name": # do not copy view layer name
+            return
+        if rna_prop.is_readonly:
+            return
+        if not identifier.startswith("use_"):
+            return
+        new_prop: UFRP_property_passe = passes.add()
+        new_prop.name = name
+        new_prop.identifier = identifier
+        new_prop.type = type
+        new_prop.sub_type = sub_type
+    
+    passes = get_passes()
+    passes.clear()
     for rna_prop in context.view_layer.bl_rna.properties:
-        # if not is_viewlayer_prop_supported(context.view_layer, rna_prop.identifier):
-        if not rna_prop.identifier.startswith("use_pass_"):
+        key = rna_prop.identifier
+        if key in ["eevee", "cycles"]:
+            for rna_prop in  getattr(context.view_layer, key).bl_rna.properties:
+                new(rna_prop.name, rna_prop.identifier, rna_prop.type, key)
             continue
-        new_prop = copy_props.add()
-        new_prop: UFRP_layer_setting_copy
-        new_prop.name = rna_prop.name
-        new_prop.identifier = rna_prop.identifier 
-        new_prop.type = rna_prop.type
+        new(rna_prop.name, rna_prop.identifier , rna_prop.type, "View Layer")
 
-
-class UFRP_layer_setting_copy(PropertyGroup):
+class UFRP_property_passe(PropertyGroup):
     name: StringProperty() # type: ignore
     identifier: StringProperty() # type: ignore
     type: StringProperty() # type: ignore
+    sub_type: StringProperty() #type: ignore
     is_copy: BoolProperty(default=True) # type: ignore
 
 
@@ -68,7 +55,8 @@ class UFRP_properties(PropertyGroup):
     is_copy_indirect_only: BoolProperty(name="Copy/Paste 'indirect_only' setting", default=True) # type: ignore
     is_copy_hide_viewport: BoolProperty(name="Copy/Paste 'hide_viewport' setting", default=True) # type: ignore
     is_copy_passes: BoolProperty(name="Copy/Paste View Layer passes setting", default=True) # type: ignore
-    copy_props: CollectionProperty(type=UFRP_layer_setting_copy, name="View Layer properties to copy") # type: ignore
+    passes: CollectionProperty(type=UFRP_property_passe, name="View Layer properties to copy") # type: ignore
+    is_copy_aovs: BoolProperty(name="Copy/Paste View Layer AOVs", default=True) # type: ignore
 
 
 def get_layer_index() -> bpy.types.IntProperty:
@@ -101,5 +89,8 @@ def is_copy_hide_viewport() -> bpy.types.BoolProperty:
 def is_copy_passes() -> bpy.types.BoolProperty:
     return bpy.context.scene.ufrp.is_copy_passes
 
-def get_copy_props() -> UFRP_layer_setting_copy:
-    return bpy.context.scene.ufrp.copy_props
+def get_passes() -> UFRP_property_passe:
+    return bpy.context.scene.ufrp.passes
+
+def is_copy_aovs() -> bpy.types.BoolProperty:
+    return bpy.context.scene.ufrp.is_copy_aovs

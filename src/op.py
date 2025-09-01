@@ -211,14 +211,14 @@ class UFRP_OP_ViewLayerSwitch(Operator):
 
 class UFRP_OP_AllCopyProps(Operator):
     """Check/Uncheck all View Layers properties for copy"""
-    bl_idname = "ufrp.all_copy_props"
+    bl_idname = "ufrp.all_passes"
     bl_label = "Check/Uncheck all"
     bl_options = {"REGISTER", "UNDO"}
     action: bpy.props.StringProperty(name="Action for all props") # type: ignore
 
     def execute(self, context: Context):
-        copy_props = props.get_copy_props()
-        for p in copy_props:
+        passes = props.get_passes()
+        for p in passes:
             match self.action:
                 case "ON":
                     p.is_copy = True
@@ -231,18 +231,18 @@ class UFRP_OP_AllCopyProps(Operator):
 
 class UFRP_OP_ReloadCopyProps(Operator):
     """Reload View Layers copiable properties"""
-    bl_idname = "ufrp.reload_copy_props"
+    bl_idname = "ufrp.reload_passes"
     bl_label = "Reload properties to copy"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: Context):
-        props.populate_copy_props(context)
+        props.populate_prop_passes(context)
         return {"FINISHED"}
 
 
 class UFRP_OP_CopyLayer(Operator):
     """Set highlighted View Layer's as copy source"""
-    bl_idname = "ufrp.copy_layer_settings"
+    bl_idname = "ufrp.copy_layer_props"
     bl_label = "Copy settings"
     bl_options = {"REGISTER"}
 
@@ -255,10 +255,22 @@ class UFRP_OP_CopyLayer(Operator):
 
 
 class UFRP_OP_PasteLayer(Operator):
-    """Paste View Layer's Layer Collections settings from source"""
-    bl_idname = "ufrp.paste_layer_settings"
-    bl_label = "Paste settings"
+    """Paste View Layer's Layer Collections props from source"""
+    bl_idname = "ufrp.paste_layer_props"
+    bl_label = "Paste props"
     bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context: Context):
+        cls.poll_message_set("No properties to Copy/Paste, please check at least one option")
+        if (    not props.is_copy_exclude() 
+            and not props.is_copy_holdout() 
+            and not props.is_copy_indirect_only() 
+            and not props.is_copy_hide_viewport()
+            and not props.is_copy_aovs()
+            and not props.is_copy_passes()
+            ): return False
+        return True
 
     @staticmethod
     def copy_layercollection_settings(source_lc: LayerCollection, target_lc: LayerCollection):
@@ -276,56 +288,34 @@ class UFRP_OP_PasteLayer(Operator):
         for src_child, dst_child in zip(s.children, t.children):
             __class__.copy_layercollection_settings(src_child, dst_child)
 
-    # # TODO (wip) add all proprety support (ex: eevee, aovs)
-    # @staticmethod
-    # def copy_attrs(object_source, object_target, filter=[]):
-    #     """Recursively copy blender's attributes, must be 'copyable'"""
-    #     assert type(object_source) == type(object_target)
-    #     assert object_source != object_target
-    #     # for rna_prop in object_source.bl_rna.properties:
-    #     for rna_prop in object_source.bl_rna.properties:
-    #         prop_name = rna_prop.identifier
-    #         if filter and prop_name not in filter:
-    #             continue
-    #         prop_src = getattr(object_source, prop_name)
-    #         prop_trg = getattr(object_target, prop_name)
-    #         # Collection props (ex: aovs)
-    #         if isinstance(prop_src, bpy.types.CollectionProperty):
-    #             for coll_prop in prop_trg:
-    #                 prop_trg.remove(coll_prop)
-    #             for coll_prop in prop_src:
-    #                 new_prop = prop_trg.add()
-    #                 __class__.copy_attrs(coll_prop, new_prop, filter)
-    #             continue
-    #         if isinstance(prop_src, ViewLayerEEVEE):
-    #             __class__.copy_attrs(prop_src, prop_trg, [])
-    #             continue
-    #         if isinstance(prop_src, CyclesRenderLayerSettings):
-    #             __class__.copy_attrs(prop_src, prop_trg, [])
-    #             continue
-    #         # Simple prop
-    #         setattr(object_target, prop_name, prop_src)
-    #         #TODO does not work for eevee ? no error messages
+    @staticmethod
+    def copy_collection_prop(obj_src, obj_trg, prop_name: str):
+        assert type(obj_src) == type(obj_trg)
+        assert obj_src != obj_trg
+        prop_src = getattr(obj_src, prop_name)
+        prop_trg = getattr(obj_trg, prop_name)
+        for coll_prop in prop_trg:
+            prop_trg.remove(coll_prop)
+        for coll_prop in prop_src:
+            new_prop = prop_trg.add()
+            filter = [p for p in prop_trg.bl_rna.properties if props.is_prop_copyable(p)]
+            __class__.copy_attrs(coll_prop, new_prop, filter)
 
     @staticmethod
-    def copy_attrs(vl_src, vl_trg, filter):
-        for attr in dir(vl_src):
-            if attr.startswith("use_pass"):
-                setattr(vl_trg, attr, attr in filter)
+    def copy_attrs(obj_src, obj_trg, filter):
+        for attr_name in dir(obj_src):
+            if attr_name not in filter:
+                continue
+            value = getattr(obj_src, attr_name)
+            setattr(obj_trg, attr_name, value)
 
 
     def execute(self, context: Context):
         # checks
-        props_to_copy = [p.identifier for p in props.get_copy_props() if p.is_copy]
-        if ((not props.is_copy_exclude() 
-            and not props.is_copy_holdout() 
-            and not props.is_copy_indirect_only() 
-            and not props.is_copy_hide_viewport()
-            ) and (
-            not props.is_copy_passes()
-            or (props.is_copy_passes() and not props_to_copy)
-            )):
-            self.report({"WARNING"}, f"No settings to Copy/Paste, please check at least one option")
+        props_to_copy = [p.identifier for p in props.get_passes() if p.is_copy]
+        if (not self.poll(context)
+            or (props.is_copy_passes() and not props_to_copy)):
+            self.report({"WARNING"}, f"No properties to Copy/Paste, please check at least one option")
             return {"CANCELLED"}
         source_vl_name = props.get_layer_source()
         if not source_vl_name:
@@ -344,9 +334,11 @@ class UFRP_OP_PasteLayer(Operator):
         self.copy_layercollection_settings(source_vl.layer_collection, target_vl.layer_collection)
         if props.is_copy_passes() and props_to_copy:
             self.copy_attrs(source_vl, target_vl, props_to_copy)
-            # self.copy_attrs(source_vl.cycles, target_vl.cycles, props_to_copy)
-            # self.copy_attrs(source_vl.eevee, target_vl.eevee, props_to_copy)
-        self.report({"INFO"}, f"Pasted settings from '{source_vl.name}' to '{target_vl.name}'")
+            self.copy_attrs(source_vl.cycles, target_vl.cycles, props_to_copy)
+            self.copy_attrs(source_vl.eevee, target_vl.eevee, props_to_copy)
+        if props.is_copy_aovs():
+            self.copy_collection_prop(source_vl, target_vl, "aovs")
+        self.report({"INFO"}, f"Pasted properties from '{source_vl.name}' to '{target_vl.name}'")
         return {"FINISHED"}
 
 

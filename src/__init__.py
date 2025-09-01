@@ -28,7 +28,7 @@ if is_reloading:
 
 def register():
     icons.register()
-    bpy.utils.register_class(props.UFRP_layer_setting_copy)
+    bpy.utils.register_class(props.UFRP_property_passe)
     bpy.utils.register_class(props.UFRP_properties)
     bpy.utils.register_class(op.UFRP_OP_batch)
     bpy.utils.register_class(op.UFRP_OP_OnlyUnmuted)
@@ -44,7 +44,7 @@ def register():
     bpy.utils.register_class(op.UFRP_OP_MoveLayer)
     bpy.utils.register_class(op.UFRP_OP_SortLayers)
     bpy.utils.register_class(ui.UFRP_PT_layer_filter)
-    bpy.utils.register_class(ui.UFRP_PT_properties_filter)
+    bpy.utils.register_class(ui.UFRP_PT_passes_filter)
     bpy.utils.register_class(ui.UFRP_MT_menu)
     bpy.utils.register_class(ui.UFRP_UL_layers)
     bpy.utils.register_class(ui.UFRP_MT_manager_context_menu)
@@ -62,7 +62,7 @@ def unregister():
     bpy.utils.unregister_class(ui.UFRP_MT_manager_context_menu)
     bpy.utils.unregister_class(ui.UFRP_UL_layers)
     bpy.utils.unregister_class(ui.UFRP_MT_menu)
-    bpy.utils.unregister_class(ui.UFRP_PT_properties_filter)
+    bpy.utils.unregister_class(ui.UFRP_PT_passes_filter)
     bpy.utils.unregister_class(ui.UFRP_PT_layer_filter)
     bpy.utils.unregister_class(op.UFRP_OP_SortLayers)
     bpy.utils.unregister_class(op.UFRP_OP_MoveLayer)
@@ -78,5 +78,5 @@ def unregister():
     bpy.utils.unregister_class(op.UFRP_OP_OnlyUnmuted)
     bpy.utils.unregister_class(op.UFRP_OP_batch)
     bpy.utils.unregister_class(props.UFRP_properties)
-    bpy.utils.unregister_class(props.UFRP_layer_setting_copy)
+    bpy.utils.unregister_class(props.UFRP_property_passe)
     icons.unregister()
