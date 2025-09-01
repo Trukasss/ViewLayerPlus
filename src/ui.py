@@ -9,7 +9,7 @@ from .op import (
     UFRP_OP_OnlySelected,
     UFRP_OP_RenderLayerSwitch,
     UFRP_OP_AllCopyProps,
-    UFRP_OP_ReloadCopyProps,
+    UFRP_OP_ReloadPasses,
     UFRP_OP_CopyLayer,
     UFRP_OP_PasteLayer,
     UFRP_OP_ViewLayerAdd,
@@ -52,13 +52,13 @@ class UFRP_PT_passes_filter(Panel):
         row.operator(UFRP_OP_AllCopyProps.bl_idname, text="", icon="RESTRICT_SELECT_ON").action = "OFF"
         row.operator(UFRP_OP_AllCopyProps.bl_idname, text="", icon="UV_SYNC_SELECT").action = "TOGGLE"
         row.separator()
-        row.operator(UFRP_OP_ReloadCopyProps.bl_idname, text="", icon="FILE_REFRESH")
+        row.operator(UFRP_OP_ReloadPasses.bl_idname, text="", icon="FILE_REFRESH")
 
     def draw(self, context: Context):
         lay = self.layout
         passes = props.get_passes()
         if not passes:
-            lay.operator(UFRP_OP_ReloadCopyProps.bl_idname, icon="FILE_REFRESH")  
+            lay.operator(UFRP_OP_ReloadPasses.bl_idname, icon="FILE_REFRESH")  
             return
         self.draw_options_row(lay)
         col = lay.column(align=True)

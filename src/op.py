@@ -1,8 +1,6 @@
 import bpy
 from bpy.types import Operator, Context, Scene, ViewLayer, CompositorNodeRLayers, Collection, CollectionProperty, LayerCollection, bpy_struct, bpy_prop_collection, ViewLayerEEVEE
 from bpy.props import BoolProperty
-from cycles.properties import CyclesRenderLayerSettings
-import json
 import re
 from . import props
 
@@ -229,10 +227,10 @@ class UFRP_OP_AllCopyProps(Operator):
         return {"FINISHED"}
 
 
-class UFRP_OP_ReloadCopyProps(Operator):
-    """Reload View Layers copiable properties"""
+class UFRP_OP_ReloadPasses(Operator):
+    """Reload View Layers copiable passes"""
     bl_idname = "ufrp.reload_passes"
-    bl_label = "Reload properties to copy"
+    bl_label = "Reload passes to copy"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: Context):
@@ -311,10 +309,15 @@ class UFRP_OP_PasteLayer(Operator):
 
 
     def execute(self, context: Context):
+        # assure passes prop
+        passes = props.get_passes()
+        if not passes:
+            props.populate_prop_passes(context)
+            passes = props.get_passes()
+        passes_to_copy = [p.identifier for p in passes if p.is_copy]
         # checks
-        props_to_copy = [p.identifier for p in props.get_passes() if p.is_copy]
         if (not self.poll(context)
-            or (props.is_copy_passes() and not props_to_copy)):
+            or (props.is_copy_passes() and not passes_to_copy)):
             self.report({"WARNING"}, f"No properties to Copy/Paste, please check at least one option")
             return {"CANCELLED"}
         source_vl_name = props.get_layer_source()
@@ -332,10 +335,10 @@ class UFRP_OP_PasteLayer(Operator):
             return {"CANCELLED"}
         # copy/paste
         self.copy_layercollection_settings(source_vl.layer_collection, target_vl.layer_collection)
-        if props.is_copy_passes() and props_to_copy:
-            self.copy_attrs(source_vl, target_vl, props_to_copy)
-            self.copy_attrs(source_vl.cycles, target_vl.cycles, props_to_copy)
-            self.copy_attrs(source_vl.eevee, target_vl.eevee, props_to_copy)
+        if props.is_copy_passes() and passes_to_copy:
+            self.copy_attrs(source_vl, target_vl, passes_to_copy)
+            self.copy_attrs(source_vl.cycles, target_vl.cycles, passes_to_copy)
+            self.copy_attrs(source_vl.eevee, target_vl.eevee, passes_to_copy)
         if props.is_copy_aovs():
             self.copy_collection_prop(source_vl, target_vl, "aovs")
         self.report({"INFO"}, f"Pasted properties from '{source_vl.name}' to '{target_vl.name}'")
