@@ -345,6 +345,17 @@ class UFRP_OP_PasteLayer(Operator):
         return {"FINISHED"}
 
 
+def backup_comp_layers(context: Context):
+    nodes = context.scene.node_tree.nodes
+    old_nodes = [n for n in nodes if n.type=="R_LAYERS"]
+    old_layers = [n.layer for n in old_nodes]
+    return old_nodes, old_layers
+
+def correct_comp_layers(backup: tuple[list, list]):
+    old_nodes, old_layers = backup
+    for node, layer in zip(old_nodes, old_layers):
+        node.layer = layer
+
 class UFRP_OP_MoveLayer(Operator):
     """Move highlighted View Layer up/down"""
     bl_idname = "ufrp.move_layer"
@@ -358,6 +369,7 @@ class UFRP_OP_MoveLayer(Operator):
         return len(context.scene.view_layers) > 1
 
     def execute(self, context: Context):
+        backup = backup_comp_layers(context)
         layer_index = props.get_layer_index()
         if self.direction == "UP":
             index_to = layer_index - 1
@@ -376,6 +388,7 @@ class UFRP_OP_MoveLayer(Operator):
             return {"CANCELLED"}
         context.scene.view_layers.move(layer_index, index_to)
         props.set_layer_index(index_to)
+        correct_comp_layers(backup)
         return {"FINISHED"}
 
 
@@ -399,11 +412,17 @@ class UFRP_OP_SortLayers(Operator):
 
     def execute(self, context: Context):
         #TODO update index to keep highlighted view layer
+        backup = backup_comp_layers(context)
         layers = context.scene.view_layers
         sorted_layers = sorted(layers, key=lambda vl: self.natural_sort_key(vl.name))
         if self.is_reverse:
             sorted_layers.reverse()
-        for to_i, l in enumerate(sorted_layers):
-            current_i = [l.name for l in context.scene.view_layers].index(l.name)
-            context.scene.view_layers.move(current_i, to_i)
+        layer_index = props.get_layer_index()
+        current_layer = layers[layer_index]
+        for to_i, layer in enumerate(sorted_layers):
+            current_i = [l for l in layers].index(layer)
+            layers.move(current_i, to_i)
+            if layer == current_layer:
+                props.set_layer_index(to_i)
+        correct_comp_layers(backup)
         return {"FINISHED"}
