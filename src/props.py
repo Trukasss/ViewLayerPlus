@@ -47,16 +47,16 @@ class UFRP_property_passe(PropertyGroup):
 
 
 class UFRP_properties(PropertyGroup):
-    index: IntProperty(name="View Layer Index") # type: ignore
+    index: IntProperty(name="Highlighted View Layer") # type: ignore
     source: StringProperty(name="View Layer copy source") # type: ignore
-    show_use: BoolProperty(name="Show 'Use For Rendering' property", default=True) # type: ignore
-    is_copy_exclude: BoolProperty(name="Copy/Paste 'exclude' setting", default=True) # type: ignore
-    is_copy_holdout: BoolProperty(name="Copy/Paste 'holdout' setting", default=True) # type: ignore
-    is_copy_indirect_only: BoolProperty(name="Copy/Paste 'indirect_only' setting", default=True) # type: ignore
-    is_copy_hide_viewport: BoolProperty(name="Copy/Paste 'hide_viewport' setting", default=True) # type: ignore
-    is_copy_passes: BoolProperty(name="Copy/Paste View Layer passes setting", default=True) # type: ignore
+    show_use: BoolProperty(name="Show use", description="Show 'Use For Rendering' property", default=True) # type: ignore
+    is_copy_exclude: BoolProperty(name="Copy Exclude from View Layer", description="Copy/Paste 'exclude' setting", default=True) # type: ignore
+    is_copy_hide_viewport: BoolProperty(name="Copy Hide in Viewport", description="Copy/Paste 'hide_viewport' setting", default=True) # type: ignore
+    is_copy_holdout: BoolProperty(name="Copy Holdout", description="Copy/Paste 'holdout' setting", default=True) # type: ignore
+    is_copy_indirect_only: BoolProperty(name="Copy Indirect Only", description="Copy/Paste 'indirect_only' setting", default=True) # type: ignore
+    is_copy_passes: BoolProperty(name="Copy Render Passes", description="Copy/Paste View Layer render passes properties", default=True) # type: ignore
     passes: CollectionProperty(type=UFRP_property_passe, name="View Layer properties to copy") # type: ignore
-    is_copy_aovs: BoolProperty(name="Copy/Paste View Layer AOVs", default=True) # type: ignore
+    is_copy_aovs: BoolProperty(name="Copy AOVs", description="Copy/Paste View Layer AOVs", default=True) # type: ignore
 
 
 def get_layer_index() -> bpy.types.IntProperty:

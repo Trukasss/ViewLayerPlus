@@ -243,7 +243,7 @@ class UFRP_OP_ReloadCopyProps(Operator):
 class UFRP_OP_CopyLayer(Operator):
     """Set highlighted View Layer's as copy source"""
     bl_idname = "ufrp.copy_layer_props"
-    bl_label = "Copy settings"
+    bl_label = "Copy properties and render settings"
     bl_options = {"REGISTER"}
 
     def execute(self, context: Context):
@@ -255,9 +255,9 @@ class UFRP_OP_CopyLayer(Operator):
 
 
 class UFRP_OP_PasteLayer(Operator):
-    """Paste View Layer's Layer Collections props from source"""
+    """Paste View Layer's Layer properties and its Collection render settings from source"""
     bl_idname = "ufrp.paste_layer_props"
-    bl_label = "Paste props"
+    bl_label = "Paste properties and render settings"
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod

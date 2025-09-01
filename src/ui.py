@@ -35,7 +35,6 @@ class UFRP_PT_layer_filter(Panel):
         lay.label(text="Filter manager options")
         row = lay.row(align=True)
         row.prop(context.scene.ufrp, "show_use", text="", icon="CHECKBOX_HLT", toggle=True)
-        row.prop(context.scene.ufrp, "show_switch", text="", icon_value=icons.get_switch_id(), toggle=True)
 
 
 class UFRP_PT_passes_filter(Panel):
@@ -139,7 +138,7 @@ class UFRP_PT_layer_manager(Panel):
         col2 = row.column(align=True)
         # col1 (main)
         col1.template_list(UFRP_UL_layers.bl_idname, "", context.scene, "view_layers", context.scene.ufrp, "index")
-        col1.label(text="Layer collection settings")
+        col1.label(text="Copy/Paste View Layers properties")
         row = col1.row(align=True)
         row.prop(context.scene.ufrp, "is_copy_exclude", text="", icon="CHECKBOX_HLT", toggle=True)
         row.prop(context.scene.ufrp, "is_copy_hide_viewport", text="", icon="HIDE_OFF", toggle=True)
