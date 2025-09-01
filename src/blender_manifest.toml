@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "use_for_rendering_plus"
-version = "1.1.1"
+version = "1.1.2"
 name = "View Layer Plus"
 tagline = "Seamlessly extend View Layers management"
 maintainer = "Lukas Sabaliauskas <lukas_sabaliauskas@hotmail.com>"
