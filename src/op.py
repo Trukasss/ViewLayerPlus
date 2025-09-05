@@ -5,7 +5,7 @@ import re
 from . import props
 
 ############## COMPOSITING ##############
-def get_render_node_scene_layer(node: CompositorNodeRLayers):
+def get_render_node_scene_layer(node: CompositorNodeRLayers) -> tuple[Scene, ViewLayer]:
     if node.type != "R_LAYERS":
         raise ValueError("Active node must be of Render Layer type")
     if node.scene is None:
@@ -16,16 +16,19 @@ def get_render_node_scene_layer(node: CompositorNodeRLayers):
     return (node.scene, layer)
 
 
-def get_render_nodes(unmuted_only=False):
+def get_render_nodes(unmuted_only=False, selected_only=False):
     node_tree =  bpy.context.scene.node_tree
     if not node_tree:
         return []
-    if unmuted_only:
-        return [node for node in node_tree.nodes if node.type == "R_LAYERS" and not node.mute]
-    return [node for node in node_tree.nodes if node.type == "R_LAYERS"]
+    return [
+        n for n in node_tree.nodes
+        if n.type == "R_LAYERS"
+        and (not unmuted_only or not n.mute)
+        and (not selected_only or n.select)
+    ]
 
 
-def use_view_layers(layers: list[ViewLayer], include=True):
+def set_all_view_layers(layers: list[ViewLayer], include=True):
     #TODO not really readable
     bpy.context.scene.render.use_single_layer = False
     nb_view_layers = 0
@@ -47,6 +50,37 @@ def use_view_layers(layers: list[ViewLayer], include=True):
     return nb_view_layers
 
 
+class UFRP_OP_toggle(Operator):
+    """Set selected View Layers 'Use for rendering' property"""
+    bl_idname = "ufrp.toggle"
+    bl_label = "Use for rendering selected"
+    bl_options = {"REGISTER", "UNDO"}
+    state: BoolProperty(
+        name="UseForRenderingState", 
+        description="Check or uncheck selected View Layers 'Use for rendering' property"
+        ) # type: ignore
+
+    @classmethod
+    def poll(cls, context: Context):
+        cls.poll_message_set("Must select Render Layer nodes")
+        return get_render_nodes(selected_only=True)
+
+    def execute(self, context: Context):
+        render_nodes = get_render_nodes(selected_only=True)
+        bpy.context.scene.render.use_single_layer = False
+        for node in render_nodes:
+            node.mute = not self.state
+            scene, layer = get_render_node_scene_layer(node)
+            if not layer:
+                continue
+            layer.use = self.state
+        if self.state == True:
+            self.report({"INFO"}, f"Enabled selected {len(render_nodes)} View Layers for rendering")
+        else:
+            self.report({"INFO"}, f"Disabled selected {len(render_nodes)} View Layers from rendering")
+        return {"FINISHED"}
+
+
 class UFRP_OP_batch(Operator):
     """Set all View Layers 'Use for rendering' property"""
     bl_idname = "ufrp.batch"
@@ -59,9 +93,10 @@ class UFRP_OP_batch(Operator):
 
     def execute(self, context: Context):
         if self.state == True:
-            nb = use_view_layers([], include=False)
+            nb = set_all_view_layers([], include=False)
         else:
-            nb = use_view_layers([], include=True)
+            nb = set_all_view_layers([], include=True)
+        # update render nodes mute state
         render_nodes = get_render_nodes()
         for node in render_nodes:
             node: CompositorNodeRLayers
@@ -89,7 +124,7 @@ class UFRP_OP_OnlyUnmuted(Operator):
                 continue
             layers_to_use.append(layer)
         # only activate layers to use
-        use_view_layers(layers_to_use, include=True)
+        set_all_view_layers(layers_to_use, include=True)
         self.report({"INFO"}, f"Enable only {len(layers_to_use)} active View Layers for rendering")
         return {"FINISHED"}
 
@@ -103,8 +138,7 @@ class UFRP_OP_OnlySelected(Operator):
     @classmethod
     def poll(cls, context: Context):
         cls.poll_message_set("Must select Render Layer nodes")
-        render_layer_nodes = [node for node in context.selected_nodes if node.type == "R_LAYERS"]
-        return len(render_layer_nodes) > 0
+        return get_render_nodes(selected_only=True)
     
     def execute(self, context: Context):
         render_nodes = get_render_nodes()
@@ -122,7 +156,7 @@ class UFRP_OP_OnlySelected(Operator):
             if not layer:
                 continue
             layers_to_use.append(layer)
-        use_view_layers(layers_to_use, include=True)
+        set_all_view_layers(layers_to_use, include=True)
         self.report({"INFO"}, f"Enable only {len(layers_to_use)} selected View Layers for rendering")
         return {"FINISHED"}
 
@@ -149,6 +183,9 @@ class UFRP_OP_RenderLayerSwitch(Operator):
         scene, layer = get_render_node_scene_layer(node)
         if not scene or not layer:
             self.report({"ERROR"}, f"Could not find scene '{scene}' and View Layer '{layer}'")
+            return {"CANCELLED"}
+        if context.window.scene == scene and context.window.view_layer == layer:
+            self.report({"INFO"}, f"Already on '{layer.name}' View Layer")
             return {"CANCELLED"}
         context.window.scene = scene
         context.window.view_layer = layer

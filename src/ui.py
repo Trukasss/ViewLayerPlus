@@ -4,6 +4,7 @@ from bl_ui.space_node import NODE_MT_context_menu
 from bl_ui.space_topbar import TOPBAR_HT_upper_bar
 from . import props
 from .op import (
+    UFRP_OP_toggle, 
     UFRP_OP_batch, 
     UFRP_OP_OnlyUnmuted,
     UFRP_OP_OnlySelected,
@@ -118,8 +119,8 @@ class UFRP_MT_manager_context_menu(Menu):
         lay.operator(UFRP_OP_SortLayers.bl_idname, icon="SORT_ASC", text="Sort by Name",).is_reverse = False
         lay.operator(UFRP_OP_SortLayers.bl_idname, icon="SORT_DESC", text="Sort reverse").is_reverse = True
         lay.separator()
-        lay.operator(UFRP_OP_batch.bl_idname, text="Enable all", icon_value = icons.get_checked_id()).state = True
-        lay.operator(UFRP_OP_batch.bl_idname, text="Disable all", icon_value = icons.get_unchecked_id()).state = False
+        lay.operator(UFRP_OP_batch.bl_idname, text="Enable all").state = True
+        lay.operator(UFRP_OP_batch.bl_idname, text="Disable all").state = False
 
 
 class UFRP_PT_manager(Panel):
@@ -179,24 +180,32 @@ class UFRP_MT_menu(Menu):
     bl_idname = "UFRP_MT_menu"
 
     def draw(self, context: Context):
-        layout = self.layout
-        op_on = layout.operator(
+        lay = self.layout
+        lay.operator(
+            UFRP_OP_toggle.bl_idname,
+            text="Enable selected",
+            icon_value = icons.get_checked_id()
+        ).state = True
+        lay.operator(
+            UFRP_OP_toggle.bl_idname,
+            text="Disable selected",
+            icon_value = icons.get_unchecked_id()
+        ).state = False
+        lay.operator(
             UFRP_OP_batch.bl_idname, 
             text="Enable all",
-            icon_value = icons.get_checked_id())
-        op_on.state = True
-        op_off = layout.operator(
+        ).state = True
+        lay.operator(
             UFRP_OP_batch.bl_idname, 
             text="Disable all",
-            icon_value = icons.get_unchecked_id())
-        op_off.state = False
-        layout.operator(
+        ).state = False
+        lay.operator(
             UFRP_OP_OnlyUnmuted.bl_idname,
             icon_value = icons.get_unmuted_id())
-        layout.operator(
+        lay.operator(
             UFRP_OP_OnlySelected.bl_idname,
             icon_value = icons.get_selected_id())
-        layout.operator(
+        lay.operator(
             UFRP_OP_RenderLayerSwitch.bl_idname,
             icon_value = icons.get_switch_id())
 
@@ -208,17 +217,27 @@ def draw_comp_menu(self: NODE_MT_context_menu, context: Context):
         layout.menu(UFRP_MT_menu.bl_idname)
 
 
-def draw_node_menu(self: NODE_MT_context_menu, context: Context):
+def draw_context_menu(self: NODE_MT_context_menu, context: Context):
     if (context.space_data.tree_type == "CompositorNodeTree"
         and context.active_node):
-        layout = self.layout
-        layout.separator()
-        layout.operator(
+        lay = self.layout
+        lay.separator()
+        lay.operator(
             UFRP_OP_RenderLayerSwitch.bl_idname, 
             icon_value = icons.get_switch_id())
-        layout.operator(
+        lay.operator(
             UFRP_OP_OnlySelected.bl_idname, 
             icon_value = icons.get_selected_id())
+        lay.operator(
+            UFRP_OP_toggle.bl_idname,
+            text="Enable selected",
+            icon_value = icons.get_checked_id()
+        ).state = True
+        lay.operator(
+            UFRP_OP_toggle.bl_idname,
+            text="Disable selected",
+            icon_value = icons.get_unchecked_id()
+        ).state = False
 
 
 def draw_manager_topbar(self: TOPBAR_HT_upper_bar, context: Context):

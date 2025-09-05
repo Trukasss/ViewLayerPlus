@@ -30,6 +30,7 @@ def register():
     icons.register()
     bpy.utils.register_class(props.UFRP_property_passe)
     bpy.utils.register_class(props.UFRP_properties)
+    bpy.utils.register_class(op.UFRP_OP_toggle)
     bpy.utils.register_class(op.UFRP_OP_batch)
     bpy.utils.register_class(op.UFRP_OP_OnlyUnmuted)
     bpy.utils.register_class(op.UFRP_OP_OnlySelected)
@@ -51,7 +52,7 @@ def register():
     bpy.utils.register_class(ui.UFRP_PT_manager_topbar)
     bpy.utils.register_class(ui.UFRP_PT_manager_properties)
     bpy.types.NODE_MT_editor_menus.append(ui.draw_comp_menu)
-    bpy.types.NODE_MT_context_menu.append(ui.draw_node_menu)
+    bpy.types.NODE_MT_context_menu.append(ui.draw_context_menu)
     bpy.types.TOPBAR_HT_upper_bar.append(ui.draw_manager_topbar)
     bpy.types.Scene.ufrp = PointerProperty(type=props.UFRP_properties)
 
@@ -59,7 +60,7 @@ def register():
 def unregister():
     del bpy.types.Scene.ufrp
     bpy.types.TOPBAR_HT_upper_bar.remove(ui.draw_manager_topbar)
-    bpy.types.NODE_MT_context_menu.remove(ui.draw_node_menu)
+    bpy.types.NODE_MT_context_menu.remove(ui.draw_context_menu)
     bpy.types.NODE_MT_editor_menus.remove(ui.draw_comp_menu)
     bpy.utils.unregister_class(ui.UFRP_PT_manager_properties)
     bpy.utils.unregister_class(ui.UFRP_PT_manager_topbar)
@@ -81,6 +82,7 @@ def unregister():
     bpy.utils.unregister_class(op.UFRP_OP_OnlySelected)
     bpy.utils.unregister_class(op.UFRP_OP_OnlyUnmuted)
     bpy.utils.unregister_class(op.UFRP_OP_batch)
+    bpy.utils.unregister_class(op.UFRP_OP_toggle)
     bpy.utils.unregister_class(props.UFRP_properties)
     bpy.utils.unregister_class(props.UFRP_property_passe)
     icons.unregister()
