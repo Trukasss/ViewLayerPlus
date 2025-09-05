@@ -346,12 +346,16 @@ class UFRP_OP_PasteLayer(Operator):
 
 
 def backup_comp_layers(context: Context):
+    if not context.scene.node_tree:
+        return None
     nodes = context.scene.node_tree.nodes
     old_nodes = [n for n in nodes if n.type=="R_LAYERS"]
     old_layers = [n.layer for n in old_nodes]
     return old_nodes, old_layers
 
 def correct_comp_layers(backup: tuple[list, list]):
+    if backup is None:
+        return
     old_nodes, old_layers = backup
     for node, layer in zip(old_nodes, old_layers):
         node.layer = layer

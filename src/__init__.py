@@ -48,17 +48,21 @@ def register():
     bpy.utils.register_class(ui.UFRP_MT_menu)
     bpy.utils.register_class(ui.UFRP_UL_layers)
     bpy.utils.register_class(ui.UFRP_MT_manager_context_menu)
-    bpy.utils.register_class(ui.UFRP_PT_layer_manager)
+    bpy.utils.register_class(ui.UFRP_PT_manager_topbar)
+    bpy.utils.register_class(ui.UFRP_PT_manager_properties)
     bpy.types.NODE_MT_editor_menus.append(ui.draw_comp_menu)
     bpy.types.NODE_MT_context_menu.append(ui.draw_node_menu)
+    bpy.types.TOPBAR_HT_upper_bar.append(ui.draw_manager_topbar)
     bpy.types.Scene.ufrp = PointerProperty(type=props.UFRP_properties)
 
 
 def unregister():
     del bpy.types.Scene.ufrp
+    bpy.types.TOPBAR_HT_upper_bar.remove(ui.draw_manager_topbar)
     bpy.types.NODE_MT_context_menu.remove(ui.draw_node_menu)
     bpy.types.NODE_MT_editor_menus.remove(ui.draw_comp_menu)
-    bpy.utils.unregister_class(ui.UFRP_PT_layer_manager)
+    bpy.utils.unregister_class(ui.UFRP_PT_manager_properties)
+    bpy.utils.unregister_class(ui.UFRP_PT_manager_topbar)
     bpy.utils.unregister_class(ui.UFRP_MT_manager_context_menu)
     bpy.utils.unregister_class(ui.UFRP_UL_layers)
     bpy.utils.unregister_class(ui.UFRP_MT_menu)

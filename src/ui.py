@@ -1,8 +1,8 @@
 import bpy
 from bpy.types import Context, Panel, Menu, UIList
 from bl_ui.space_node import NODE_MT_context_menu
+from bl_ui.space_topbar import TOPBAR_HT_upper_bar
 from . import props
-
 from .op import (
     UFRP_OP_batch, 
     UFRP_OP_OnlyUnmuted,
@@ -122,14 +122,10 @@ class UFRP_MT_manager_context_menu(Menu):
         lay.operator(UFRP_OP_batch.bl_idname, text="Disable all", icon_value = icons.get_unchecked_id()).state = False
 
 
-class UFRP_PT_layer_manager(Panel):
+class UFRP_PT_manager(Panel):
     """Creates a Panel in the Object properties window"""
     bl_label = "ViewLayerPlus Manager"
-    bl_idname = "UFRP_PT_layer_manager"
-    bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
-    bl_context = "view_layer"
-    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         lay = self.layout
@@ -163,6 +159,21 @@ class UFRP_PT_layer_manager(Panel):
         col2.operator(UFRP_OP_MoveLayer.bl_idname, icon="TRIA_DOWN", text="").direction = "DOWN"
 
 
+class UFRP_PT_manager_topbar(UFRP_PT_manager):
+    bl_idname = "UFRP_PT_UFRP_PT_manager_topbarlayer_manager"
+    bl_space_type = "TOPBAR"
+    bl_options = {"INSTANCED"}
+    bl_ui_units_x = 20
+
+
+class UFRP_PT_manager_properties(UFRP_PT_manager):
+    bl_idname = "UFRP_PT_manager_properties"
+    bl_space_type = "PROPERTIES"
+    bl_context = "view_layer"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = "VIEWLAYER_PT_layer"
+
+
 class UFRP_MT_menu(Menu):
     bl_label = "View Layers"
     bl_idname = "UFRP_MT_menu"
@@ -190,7 +201,7 @@ class UFRP_MT_menu(Menu):
             icon_value = icons.get_switch_id())
 
 
-def draw_comp_menu(self: Panel, context: Context):
+def draw_comp_menu(self: NODE_MT_context_menu, context: Context):
     space = context.space_data
     if space.type == "NODE_EDITOR" and space.tree_type == "CompositorNodeTree":
         layout = self.layout
@@ -208,3 +219,9 @@ def draw_node_menu(self: NODE_MT_context_menu, context: Context):
         layout.operator(
             UFRP_OP_OnlySelected.bl_idname, 
             icon_value = icons.get_selected_id())
+
+
+def draw_manager_topbar(self: TOPBAR_HT_upper_bar, context: Context):
+    if context.region.alignment == "RIGHT":
+        lay = self.layout
+        lay.popover(panel=UFRP_PT_manager_topbar.bl_idname, text="", icon_value=icons.get_addon_id())
