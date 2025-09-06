@@ -344,7 +344,6 @@ class UFRP_OP_PasteLayer(Operator):
             value = getattr(obj_src, attr_name)
             setattr(obj_trg, attr_name, value)
 
-
     def execute(self, context: Context):
         # assure passes prop
         passes = props.get_passes()
@@ -379,6 +378,34 @@ class UFRP_OP_PasteLayer(Operator):
         if props.is_copy_aovs():
             self.copy_collection_prop(source_vl, target_vl, "aovs")
         self.report({"INFO"}, f"Pasted properties from '{source_vl.name}' to '{target_vl.name}'")
+        return {"FINISHED"}
+
+
+class UFRP_OT_CopyToSelected(Operator):
+    """Copy selected collection's render settings to all View Layers"""
+    bl_idname = "ufrp.copy_to_selected"
+    bl_label = "Copy to selected"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def copy_layercollection_settings(self, source_lc: LayerCollection, target_lc: LayerCollection):
+        """Recursively copy View Layer's Layer Collections settings"""
+        if target_lc.collection in self.selected:
+            target_lc.exclude = source_lc.exclude
+            target_lc.holdout = source_lc.holdout
+            target_lc.indirect_only = source_lc.indirect_only
+            target_lc.hide_viewport = source_lc.hide_viewport
+        for src_child, dst_child in zip(source_lc.children, target_lc.children):
+            self.copy_layercollection_settings(src_child, dst_child)
+
+    def execute(self, context: Context):
+        self.selected = [c for c in context.selected_ids if c.id_type=="COLLECTION"]
+        current_vl = context.view_layer
+        vls = context.scene.view_layers
+        for vl in vls:
+            if current_vl == vl:
+                continue
+            self.copy_layercollection_settings(current_vl.layer_collection, vl.layer_collection)
+        self.report({"INFO"}, f"Copied {len(self.selected)} Layer Collections settings to {len(vls)-1} View Layers")
         return {"FINISHED"}
 
 

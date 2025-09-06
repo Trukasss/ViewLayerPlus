@@ -42,6 +42,7 @@ def register():
     bpy.utils.register_class(op.UFRP_OP_ReloadPasses)
     bpy.utils.register_class(op.UFRP_OP_CopyLayer)
     bpy.utils.register_class(op.UFRP_OP_PasteLayer)
+    bpy.utils.register_class(op.UFRP_OT_CopyToSelected)
     bpy.utils.register_class(op.UFRP_OP_MoveLayer)
     bpy.utils.register_class(op.UFRP_OP_SortLayers)
     bpy.utils.register_class(ui.UFRP_PT_layer_filter)
@@ -54,11 +55,13 @@ def register():
     bpy.types.NODE_MT_editor_menus.append(ui.draw_comp_menu)
     bpy.types.NODE_MT_context_menu.append(ui.draw_context_menu)
     bpy.types.TOPBAR_HT_upper_bar.append(ui.draw_manager_topbar)
+    bpy.types.OUTLINER_MT_collection.append(ui.draw_context_outliner)
     bpy.types.Scene.ufrp = PointerProperty(type=props.UFRP_properties)
 
 
 def unregister():
     del bpy.types.Scene.ufrp
+    bpy.types.OUTLINER_MT_collection.remove(ui.draw_context_outliner)
     bpy.types.TOPBAR_HT_upper_bar.remove(ui.draw_manager_topbar)
     bpy.types.NODE_MT_context_menu.remove(ui.draw_context_menu)
     bpy.types.NODE_MT_editor_menus.remove(ui.draw_comp_menu)
@@ -71,6 +74,7 @@ def unregister():
     bpy.utils.unregister_class(ui.UFRP_PT_layer_filter)
     bpy.utils.unregister_class(op.UFRP_OP_SortLayers)
     bpy.utils.unregister_class(op.UFRP_OP_MoveLayer)
+    bpy.utils.unregister_class(op.UFRP_OT_CopyToSelected)
     bpy.utils.unregister_class(op.UFRP_OP_PasteLayer)
     bpy.utils.unregister_class(op.UFRP_OP_CopyLayer)
     bpy.utils.unregister_class(op.UFRP_OP_ReloadPasses)

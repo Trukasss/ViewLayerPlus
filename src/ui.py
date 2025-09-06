@@ -13,6 +13,7 @@ from .op import (
     UFRP_OP_ReloadPasses,
     UFRP_OP_CopyLayer,
     UFRP_OP_PasteLayer,
+    UFRP_OT_CopyToSelected,
     UFRP_OP_ViewLayerAdd,
     UFRP_OP_ViewLayerRemove,
     UFRP_OP_ViewLayerSwitch,
@@ -244,3 +245,9 @@ def draw_manager_topbar(self: TOPBAR_HT_upper_bar, context: Context):
     if context.region.alignment == "RIGHT":
         lay = self.layout
         lay.popover(panel=UFRP_PT_manager_topbar.bl_idname, text="", icon_value=icons.get_addon_id())
+
+
+def draw_context_outliner(self, context: Context):
+    lay = self.layout
+    lay.separator()
+    lay.operator(UFRP_OT_CopyToSelected.bl_idname, icon_value=icons.get_addon_id())
