@@ -40,10 +40,11 @@ This addon also allows you to manage your View Layers like any other Blender lis
 ___
 ## 3. OUTLINER
 ![outliner](/presentation/presentation_outliner.png)
+![outliner_menu](/presentation/presentation_outliner_menu.png)
 
-Finally, it adds a quick way to copy selected Collections render settings:
+Finally, it adds a quick way to copy from the outliner the selected Collections render settings:
 
-> 1. Copy selected Layer Collections render settings (exclude, holdout, indirect_only, hide_viewport) in all View Layers
+> 1. Copy selected Layer Collections render settings (exclude, holdout, indirect_only, hide_viewport) to selcted View Layers
 
 
 ### Good Blending :)
