@@ -333,13 +333,13 @@ class UFRP_OP_PasteLayer(Operator):
             prop_trg.remove(coll_prop)
         for coll_prop in prop_src:
             new_prop = prop_trg.add()
-            filter = [p for p in prop_trg.bl_rna.properties if props.is_prop_copyable(p)]
+            filter = [p.identifier for p in new_prop.bl_rna.properties if props.is_prop_copyable(p)]
             __class__.copy_attrs(coll_prop, new_prop, filter)
 
     @staticmethod
-    def copy_attrs(obj_src, obj_trg, filter):
+    def copy_attrs(obj_src, obj_trg, filter=None):
         for attr_name in dir(obj_src):
-            if attr_name not in filter:
+            if filter is not None and attr_name not in filter:
                 continue
             value = getattr(obj_src, attr_name)
             setattr(obj_trg, attr_name, value)
