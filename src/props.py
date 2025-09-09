@@ -38,6 +38,12 @@ def populate_prop_passes(context: Context):
             continue
         new(rna_prop.name, rna_prop.identifier , rna_prop.type, "View Layer")
 
+
+class UFRP_property_select(PropertyGroup):
+    name: StringProperty() # type: ignore
+    selected: BoolProperty() # type: ignore
+
+
 class UFRP_property_passe(PropertyGroup):
     name: StringProperty() # type: ignore
     identifier: StringProperty() # type: ignore

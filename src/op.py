@@ -381,32 +381,70 @@ class UFRP_OP_PasteLayer(Operator):
         return {"FINISHED"}
 
 
+def get_other_view_layers_items(self, context: Context):
+    return [(vl.name, vl.name , "") for vl in context.scene.view_layers if vl!=context.view_layer]
+
+
 class UFRP_OT_CopyToSelected(Operator):
     """Copy selected collection's render settings to all View Layers"""
     bl_idname = "ufrp.copy_to_selected"
-    bl_label = "Copy to selected"
+    bl_label = "Copy Collection's settings to..."
     bl_options = {"REGISTER", "UNDO"}
+    view_layers: bpy.props.CollectionProperty(type=props.UFRP_property_select) #type: ignore
+    is_copy_exclude: BoolProperty(name="Copy Exclude from View Layer", description="Copy/Paste 'exclude' setting", default=True) # type: ignore
+    is_copy_hide_viewport: BoolProperty(name="Copy Hide in Viewport", description="Copy/Paste 'hide_viewport' setting", default=True) # type: ignore
+    is_copy_holdout: BoolProperty(name="Copy Holdout", description="Copy/Paste 'holdout' setting", default=True) # type: ignore
+    is_copy_indirect_only: BoolProperty(name="Copy Indirect Only", description="Copy/Paste 'indirect_only' setting", default=True) # type: ignore
 
-    def copy_layercollection_settings(self, source_lc: LayerCollection, target_lc: LayerCollection):
-        """Recursively copy View Layer's Layer Collections settings"""
-        if target_lc.collection in self.selected:
-            target_lc.exclude = source_lc.exclude
-            target_lc.holdout = source_lc.holdout
-            target_lc.indirect_only = source_lc.indirect_only
-            target_lc.hide_viewport = source_lc.hide_viewport
-        for src_child, dst_child in zip(source_lc.children, target_lc.children):
-            self.copy_layercollection_settings(src_child, dst_child)
+    def invoke(self, context, event):
+        self.selected = [c for c in context.selected_ids if c.id_type=="COLLECTION"]
+        self.view_layers.clear()
+        for vl in context.scene.view_layers:
+            if vl == context.view_layer:
+                continue
+            pr = self.view_layers.add()
+            pr.name = vl.name
+            pr.selected = True
+        return context.window_manager.invoke_props_dialog(self)
+    
+    def draw(self, context: Context):
+        lay = self.layout
+        lay: bpy.types.UILayout
+        lay.label(text=f"From {len(self.selected)} selected Collection(s), copy")
+        row = lay.row(align=True)
+        row.prop(self, "is_copy_exclude", text="", icon="CHECKBOX_HLT", toggle=True)
+        row.prop(self, "is_copy_hide_viewport", text="", icon="HIDE_OFF", toggle=True)
+        row.prop(self, "is_copy_holdout", text="", icon="HOLDOUT_ON", toggle=True)
+        row.prop(self, "is_copy_indirect_only", text="", icon="INDIRECT_ONLY_ON", toggle=True)
+        lay.label(text="To the following View Layers")
+        col = lay.column(align=True)
+        for pr in self.view_layers:
+            col.prop(pr, "selected", text=pr.name, toggle=True, icon="RENDERLAYERS")
 
     def execute(self, context: Context):
-        self.selected = [c for c in context.selected_ids if c.id_type=="COLLECTION"]
         current_vl = context.view_layer
         vls = context.scene.view_layers
-        for vl in vls:
-            if current_vl == vl:
+        for pr in self.view_layers:
+            if not pr.selected:
                 continue
+            vl = context.scene.view_layers[pr.name]
             self.copy_layercollection_settings(current_vl.layer_collection, vl.layer_collection)
         self.report({"INFO"}, f"Copied {len(self.selected)} Layer Collections settings to {len(vls)-1} View Layers")
         return {"FINISHED"}
+    
+    def copy_layercollection_settings(self, source_lc: LayerCollection, target_lc: LayerCollection):
+        """Recursively copy View Layer's Layer Collections settings"""
+        if target_lc.collection in self.selected:
+            if self.is_copy_exclude:
+                target_lc.exclude = source_lc.exclude
+            if self.is_copy_holdout:
+                target_lc.holdout = source_lc.holdout
+            if self.is_copy_indirect_only:
+                target_lc.indirect_only = source_lc.indirect_only
+            if self.is_copy_hide_viewport:
+                target_lc.hide_viewport = source_lc.hide_viewport
+        for src_child, dst_child in zip(source_lc.children, target_lc.children):
+            self.copy_layercollection_settings(src_child, dst_child)
 
 
 def backup_comp_layers(context: Context):

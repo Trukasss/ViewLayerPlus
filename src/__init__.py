@@ -28,6 +28,7 @@ if is_reloading:
 
 def register():
     icons.register()
+    bpy.utils.register_class(props.UFRP_property_select)
     bpy.utils.register_class(props.UFRP_property_passe)
     bpy.utils.register_class(props.UFRP_properties)
     bpy.utils.register_class(op.UFRP_OP_toggle)
@@ -89,4 +90,5 @@ def unregister():
     bpy.utils.unregister_class(op.UFRP_OP_toggle)
     bpy.utils.unregister_class(props.UFRP_properties)
     bpy.utils.unregister_class(props.UFRP_property_passe)
+    bpy.utils.unregister_class(props.UFRP_property_select)
     icons.unregister()

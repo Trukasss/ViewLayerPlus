@@ -250,4 +250,6 @@ def draw_manager_topbar(self: TOPBAR_HT_upper_bar, context: Context):
 def draw_context_outliner(self, context: Context):
     lay = self.layout
     lay.separator()
+    lay.operator_context = "INVOKE_DEFAULT"
     lay.operator(UFRP_OT_CopyToSelected.bl_idname, icon_value=icons.get_addon_id())
+    lay.operator_context = 'EXEC_DEFAULT' 
