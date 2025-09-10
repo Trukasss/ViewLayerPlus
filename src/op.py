@@ -396,6 +396,11 @@ class UFRP_OT_CopyToSelected(Operator):
     is_copy_holdout: BoolProperty(name="Copy Holdout", description="Copy/Paste 'holdout' setting", default=True) # type: ignore
     is_copy_indirect_only: BoolProperty(name="Copy Indirect Only", description="Copy/Paste 'indirect_only' setting", default=True) # type: ignore
 
+    @classmethod
+    def poll(cls, context: Context):
+        cls.poll_message_set(f"Must have at least 2 View Layers")
+        return len(context.scene.view_layers) > 1
+
     def invoke(self, context, event):
         self.selected = [c for c in context.selected_ids if c.id_type=="COLLECTION"]
         self.view_layers.clear()

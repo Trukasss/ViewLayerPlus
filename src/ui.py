@@ -252,4 +252,12 @@ def draw_context_outliner(self, context: Context):
     lay.separator()
     lay.operator_context = "INVOKE_DEFAULT"
     lay.operator(UFRP_OT_CopyToSelected.bl_idname, icon_value=icons.get_addon_id())
-    lay.operator_context = 'EXEC_DEFAULT' 
+    lay.operator_context = "EXEC_DEFAULT"
+
+
+# NOTE right click contextual menu properties panel view layer properties
+# def draw_context_passes(self, context: Context):
+#     if (context.button_pointer == context.view_layer
+#         and context.space_data.context == "VIEW_LAYER"):
+#         lay = self.layout
+#         lay.label(text=f"Property={context.button_prop.identifier}")
