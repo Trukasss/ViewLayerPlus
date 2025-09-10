@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import PropertyGroup, Context
+from bpy.types import PropertyGroup, Context, AddonPreferences
 from bpy.props import IntProperty, CollectionProperty, BoolProperty, StringProperty, EnumProperty, PointerProperty
 
 
@@ -39,6 +39,44 @@ def populate_prop_passes(context: Context):
         new(rna_prop.name, rna_prop.identifier , rna_prop.type, "View Layer")
 
 
+class UFRP_preferences(AddonPreferences):
+    bl_idname = __package__
+    show_manager_top: bpy.props.BoolProperty(
+        name="Show Manager in topbar", 
+        description="(Default: On) Show or hide the ViewLayerPlus Manager from the top right corner of the window", 
+        default=True) #type: ignore
+    show_manager_panel: bpy.props.BoolProperty(
+        name="Show Manager in Property panel", 
+        description="(Default: On) Show or hide the ViewLayerPlus Manager from Properties Panel > View Layer Tab > View Layer Panel", 
+        default=True) #type: ignore
+    show_comp_menu: bpy.props.BoolProperty(
+        name="Show Compositing 'View Layer' menu", 
+        description="(Default: On) Show or hide the 'View Layer' menu drop-down with options like 'Enable Selected'", 
+        default=True) #type: ignore
+    show_comp_contextual: bpy.props.BoolProperty(
+        name="Show Compositing Node right-click actions", 
+        description="(Default: On) Show or hide the right-click contextual menu actions for Compositing nodes", 
+        default=True) #type: ignore
+    show_outliner_contextual: bpy.props.BoolProperty(
+        name="Show outliner's Collections right-click action", 
+        description="(Default: On) Show or hide the right-click contextual menu actions for the outliner's Collections", 
+        default=True) #type: ignore
+    show_depricated: bpy.props.BoolProperty(
+        name="Show depricated Manager copy/paste options", 
+        description="(Default: Off) Show or hide the ViewLayerPlus Manager copy/paste Passes and AOVs options", 
+        default=False) #type: ignore
+
+    def draw(self, context: Context):
+        lay = self.layout
+        lay.prop(self, "show_manager_top")
+        lay.prop(self, "show_manager_panel")
+        lay.prop(self, "show_comp_menu")
+        lay.prop(self, "show_comp_contextual")
+        lay.prop(self, "show_outliner_contextual")
+        lay.prop(self, "show_depricated")
+
+
+
 class UFRP_property_select(PropertyGroup):
     name: StringProperty() # type: ignore
     selected: BoolProperty() # type: ignore
@@ -64,6 +102,33 @@ class UFRP_properties(PropertyGroup):
     passes: CollectionProperty(type=UFRP_property_passe, name="View Layer properties to copy") # type: ignore
     is_copy_aovs: BoolProperty(name="Copy AOVs", description="Copy/Paste View Layer AOVs", default=True) # type: ignore
 
+
+def get_prefs():
+    return bpy.context.preferences.addons[__package__].preferences
+
+def get_prefs_show_manager_top():
+    prefs = get_prefs() 
+    return prefs.show_manager_top
+
+def get_prefs_show_manager_panel():
+    prefs = get_prefs() 
+    return prefs.show_manager_panel
+
+def get_prefs_show_comp_menu():
+    prefs = get_prefs() 
+    return prefs.show_comp_menu
+
+def get_prefs_show_comp_contextual():
+    prefs = get_prefs() 
+    return prefs.show_comp_contextual
+
+def get_prefs_show_outliner_contextual():
+    prefs = get_prefs() 
+    return prefs.show_outliner_contextual
+
+def get_prefs_show_depricated():
+    prefs = get_prefs() 
+    return prefs.show_depricated
 
 def get_layer_index() -> bpy.types.IntProperty:
     return bpy.context.scene.ufrp.index

@@ -298,13 +298,19 @@ class UFRP_OP_PasteLayer(Operator):
     @classmethod
     def poll(cls, context: Context):
         cls.poll_message_set("No properties to Copy/Paste, please check at least one option")
-        if (    not props.is_copy_exclude() 
+        if props.get_prefs_show_depricated():
+            if (    not props.is_copy_exclude() 
+                and not props.is_copy_holdout() 
+                and not props.is_copy_indirect_only() 
+                and not props.is_copy_hide_viewport()
+                and not props.is_copy_aovs()
+                and not props.is_copy_passes()
+                ): return False
+        elif (  not props.is_copy_exclude() 
             and not props.is_copy_holdout() 
             and not props.is_copy_indirect_only() 
             and not props.is_copy_hide_viewport()
-            and not props.is_copy_aovs()
-            and not props.is_copy_passes()
-            ): return False
+        ): return False
         return True
 
     @staticmethod
@@ -353,7 +359,7 @@ class UFRP_OP_PasteLayer(Operator):
         passes_to_copy = [p.identifier for p in passes if p.is_copy]
         # checks
         if (not self.poll(context)
-            or (props.is_copy_passes() and not passes_to_copy)):
+            and (props.get_prefs_show_depricated() and props.is_copy_passes() and not passes_to_copy)):
             self.report({"WARNING"}, f"No properties to Copy/Paste, please check at least one option")
             return {"CANCELLED"}
         source_vl_name = props.get_layer_source()
@@ -371,11 +377,11 @@ class UFRP_OP_PasteLayer(Operator):
             return {"CANCELLED"}
         # copy/paste
         self.copy_layercollection_settings(source_vl.layer_collection, target_vl.layer_collection)
-        if props.is_copy_passes() and passes_to_copy:
+        if props.get_prefs_show_depricated() and props.is_copy_passes() and passes_to_copy:
             self.copy_attrs(source_vl, target_vl, passes_to_copy)
             self.copy_attrs(source_vl.cycles, target_vl.cycles, passes_to_copy)
             self.copy_attrs(source_vl.eevee, target_vl.eevee, passes_to_copy)
-        if props.is_copy_aovs():
+        if props.get_prefs_show_depricated() and props.is_copy_aovs():
             self.copy_collection_prop(source_vl, target_vl, "aovs")
         self.report({"INFO"}, f"Pasted properties from '{source_vl.name}' to '{target_vl.name}'")
         return {"FINISHED"}

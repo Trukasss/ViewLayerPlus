@@ -143,11 +143,12 @@ class UFRP_PT_manager(Panel):
         row.prop(context.scene.ufrp, "is_copy_holdout", text="", icon="HOLDOUT_ON", toggle=True)
         row.prop(context.scene.ufrp, "is_copy_indirect_only", text="", icon="INDIRECT_ONLY_ON", toggle=True)
         row.separator()
-        row.prop(context.scene.ufrp, "is_copy_passes", text="Passes", toggle=True)
-        row.popover(panel=UFRP_PT_passes_filter.bl_idname, text="", icon="FILTER")
-        row.separator()
-        row.prop(context.scene.ufrp, "is_copy_aovs", text="AOVs", toggle=True)
-        row.separator()
+        if props.get_prefs_show_depricated():
+            row.prop(context.scene.ufrp, "is_copy_passes", text="Passes", toggle=True)
+            row.popover(panel=UFRP_PT_passes_filter.bl_idname, text="", icon="FILTER")
+            row.separator()
+            row.prop(context.scene.ufrp, "is_copy_aovs", text="AOVs", toggle=True)
+            row.separator()
         row.operator(UFRP_OP_CopyLayer.bl_idname, text="", icon="COPYDOWN")
         row.operator(UFRP_OP_PasteLayer.bl_idname, text="", icon="PASTEDOWN")
         # col2 (sidebar)
@@ -166,6 +167,9 @@ class UFRP_PT_manager_topbar(UFRP_PT_manager):
     bl_space_type = "TOPBAR"
     bl_options = {"INSTANCED"}
     bl_ui_units_x = 20
+    @classmethod
+    def poll(cls, context: Context):
+        return props.get_prefs_show_manager_top()
 
 
 class UFRP_PT_manager_properties(UFRP_PT_manager):
@@ -174,11 +178,18 @@ class UFRP_PT_manager_properties(UFRP_PT_manager):
     bl_context = "view_layer"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = "VIEWLAYER_PT_layer"
+    @classmethod
+    def poll(cls, context: Context):
+        return props.get_prefs_show_manager_panel()
+        
 
-
-class UFRP_MT_menu(Menu):
+class UFRP_MT_comp_menu(Menu):
     bl_label = "View Layers"
     bl_idname = "UFRP_MT_menu"
+
+    @classmethod
+    def poll(cls, context):
+        return props.get_prefs_show_comp_menu()
 
     def draw(self, context: Context):
         lay = self.layout
@@ -215,11 +226,12 @@ def draw_comp_menu(self: NODE_MT_context_menu, context: Context):
     space = context.space_data
     if space.type == "NODE_EDITOR" and space.tree_type == "CompositorNodeTree":
         layout = self.layout
-        layout.menu(UFRP_MT_menu.bl_idname)
+        layout.menu(UFRP_MT_comp_menu.bl_idname)
 
 
-def draw_context_menu(self: NODE_MT_context_menu, context: Context):
-    if (context.space_data.tree_type == "CompositorNodeTree"
+def draw_comp_context(self: NODE_MT_context_menu, context: Context):
+    if (props.get_prefs_show_comp_contextual()
+        and context.space_data.tree_type == "CompositorNodeTree"
         and context.active_node):
         lay = self.layout
         lay.separator()
@@ -242,17 +254,19 @@ def draw_context_menu(self: NODE_MT_context_menu, context: Context):
 
 
 def draw_manager_topbar(self: TOPBAR_HT_upper_bar, context: Context):
-    if context.region.alignment == "RIGHT":
+    if (props.get_prefs_show_manager_top()
+        and context.region.alignment == "RIGHT"):
         lay = self.layout
         lay.popover(panel=UFRP_PT_manager_topbar.bl_idname, text="", icon_value=icons.get_addon_id())
 
 
-def draw_context_outliner(self, context: Context):
-    lay = self.layout
-    lay.separator()
-    lay.operator_context = "INVOKE_DEFAULT"
-    lay.operator(UFRP_OT_CopyToSelected.bl_idname, icon_value=icons.get_addon_id())
-    lay.operator_context = "EXEC_DEFAULT"
+def draw_outliner_context(self, context: Context):
+    if props.get_prefs_show_outliner_contextual():
+        lay = self.layout
+        lay.separator()
+        lay.operator_context = "INVOKE_DEFAULT"
+        lay.operator(UFRP_OT_CopyToSelected.bl_idname, icon_value=icons.get_addon_id())
+        lay.operator_context = "EXEC_DEFAULT"
 
 
 # NOTE right click contextual menu properties panel view layer properties
