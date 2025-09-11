@@ -91,7 +91,7 @@ class UFRP_property_passe(PropertyGroup):
 
 
 class UFRP_properties(PropertyGroup):
-    index: IntProperty(name="Highlighted View Layer") # type: ignore
+    index: IntProperty(name="Select View Layer") # type: ignore
     source: StringProperty(name="View Layer copy source") # type: ignore
     show_use: BoolProperty(name="Show use", description="Show 'Use For Rendering' property", default=True) # type: ignore
     is_copy_exclude: BoolProperty(name="Copy Exclude from View Layer", description="Copy/Paste 'exclude' setting", default=True) # type: ignore
