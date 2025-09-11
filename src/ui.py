@@ -36,7 +36,7 @@ class UFRP_PT_layer_filter(Panel):
         lay = self.layout
         lay.label(text="Filter manager options")
         row = lay.row(align=True)
-        row.prop(context.scene.ufrp, "show_use", text="", icon="CHECKBOX_HLT", toggle=True)
+        row.prop(context.scene.ufrp, "show_use", text="", icon="RESTRICT_RENDER_OFF", toggle=True)
 
 
 class UFRP_PT_passes_filter(Panel):
@@ -100,14 +100,14 @@ class UFRP_UL_layers(UIList):
         scene = data
         row = layout.row(align=True)
         if item == context.view_layer:
-            # row.label(text="")
             row.prop(item, "name", text="", emboss=False, icon_value=icon)
         else:
             row.operator(UFRP_OP_ViewLayerSwitch.bl_idname, text="", icon_value=icons.get_switch_id()).layer_name = item.name
             row.prop(item, "name", text="", emboss=False, icon="BLANK1")
         row = row.row(align=True)
         if props.is_show_use():
-            row.prop(item, "use", text="")#, toggle=True)
+            icon = "RESTRICT_RENDER_OFF" if item.use else "RESTRICT_RENDER_ON"
+            row.prop(item, "use", icon_only=True, emboss=False, icon=icon)
 
 
 class UFRP_MT_manager_context_menu(Menu):
@@ -136,7 +136,10 @@ class UFRP_PT_manager(Panel):
         col2 = row.column(align=True)
         # col1 (main)
         col1.template_list(UFRP_UL_layers.bl_idname, "", context.scene, "view_layers", context.scene.ufrp, "index")
-        col1.label(text="Copy/Paste View Layers properties")
+        if props.get_prefs_show_depricated():
+            col1.label(text="Copy/Paste View Layers properties")
+        else:
+            col1.label(text="Copy/Paste Layer Collections settings")
         row = col1.row(align=True)
         row.prop(context.scene.ufrp, "is_copy_exclude", text="", icon="CHECKBOX_HLT", toggle=True)
         row.prop(context.scene.ufrp, "is_copy_hide_viewport", text="", icon="HIDE_OFF", toggle=True)
