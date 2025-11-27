@@ -2,7 +2,7 @@ bl_info = {
     "name": "View Layer Plus",
     "description": "Seamlessly extend View Layers management",
     "author": "Lukas Sabaliauskas <lukas_sabaliauskas@hotmail.com>",
-    "version": (1, 2, 0),
+    "version": (1, 2, 1),
     "blender": (4, 0, 0),
     "doc_url": "https://extensions.blender.org/add-ons/use-for-rendering-plus/",
     "tracker_url": "https://github.com/Trukasss/ViewLayerPlus",
