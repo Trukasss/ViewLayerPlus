@@ -16,12 +16,18 @@ def get_render_node_scene_layer(node: CompositorNodeRLayers) -> tuple[Scene, Vie
     return (node.scene, layer)
 
 
+def get_comp_group(scene: Scene):
+    if bpy.app.version < (5, 0, 0):
+        return scene.node_tree
+    return scene.compositing_node_group 
+
+
 def get_render_nodes(unmuted_only=False, selected_only=False):
-    node_tree =  bpy.context.scene.node_tree
-    if not node_tree:
+    comp_group = get_comp_group(bpy.context.scene)
+    if not comp_group:
         return []
     return [
-        n for n in node_tree.nodes
+        n for n in comp_group.nodes
         if n.type == "R_LAYERS"
         and (not unmuted_only or not n.mute)
         and (not selected_only or n.select)
@@ -458,9 +464,10 @@ class UFRP_OT_CopyToSelected(Operator):
 
 
 def backup_comp_layers(context: Context):
-    if not context.scene.node_tree:
+    comp_group = get_comp_group(context.scene)
+    if not comp_group:
         return None
-    nodes = context.scene.node_tree.nodes
+    nodes = comp_group.nodes
     old_nodes = [n for n in nodes if n.type=="R_LAYERS"]
     old_layers = [n.layer for n in old_nodes]
     return old_nodes, old_layers

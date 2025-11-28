@@ -8,7 +8,6 @@ maintainer = "Lukas Sabaliauskas <lukas_sabaliauskas@hotmail.com>"
 type = "add-on"
 tags = ["Compositing", "User Interface"]
 blender_version_min = "4.2.0"
-blender_version_max = "5.0.0"
 license = [
   "SPDX:GPL-3.0-or-later",
 ]
