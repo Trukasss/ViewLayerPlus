@@ -28,7 +28,7 @@ class UFRP_PT_layer_filter(Panel):
     bl_label = "ViewLayerPlus Manager filter"
     bl_idname = "UFRP_PT_layer_filter"
     bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
+    bl_region_type = "HEADER"
     bl_context = "view_layer"
     bl_options = {"INSTANCED"}
 
@@ -44,7 +44,7 @@ class UFRP_PT_passes_filter(Panel):
     bl_label = "ViewLayerPlus copy passes filter"
     bl_idname = "UFRP_PT_passes_filter"
     bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
+    bl_region_type = "HEADER"
     bl_context = "view_layer"
     bl_options = {"INSTANCED"}
 
