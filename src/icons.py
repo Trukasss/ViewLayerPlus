@@ -10,29 +10,29 @@ def register():
     _icons = bpy.utils.previews.new()
     icons_dir = Path(__file__).parent / "images"
     _icons.load(
-        name="addon", 
-        path=str(icons_dir / "icon_addon.png"), 
-        path_type="IMAGE")
+        "addon", 
+        str(icons_dir / "icon_addon.png"), 
+        "IMAGE")
     _icons.load(
-        name="checked", 
-        path=str(icons_dir / "icon_checked.png"), 
-        path_type="IMAGE")
+        "checked", 
+        str(icons_dir / "icon_checked.png"), 
+        "IMAGE")
     _icons.load(
-        name="unchecked", 
-        path=str(icons_dir / "icon_unchecked.png"), 
-        path_type="IMAGE")
+        "unchecked", 
+        str(icons_dir / "icon_unchecked.png"), 
+        "IMAGE")
     _icons.load(
-        name="selected", 
-        path=str(icons_dir / "icon_selected.png"), 
-        path_type="IMAGE")
+        "selected", 
+        str(icons_dir / "icon_selected.png"), 
+        "IMAGE")
     _icons.load(
-        name="switch", 
-        path=str(icons_dir / "icon_switch.png"), 
-        path_type="IMAGE")
+        "switch", 
+        str(icons_dir / "icon_switch.png"), 
+        "IMAGE")
     _icons.load(
-        name="unmuted", 
-        path=str(icons_dir / "icon_unmuted.png"), 
-        path_type="IMAGE")
+        "unmuted", 
+        str(icons_dir / "icon_unmuted.png"), 
+        "IMAGE")
 
 
 def unregister():
